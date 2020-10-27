@@ -1,8 +1,20 @@
 #!/bin/bash
 
+# Remove temporary files and exit
 function tearDown {
 	rm -f "/tmp/backcheck-$$-backup-sum" "/tmp/backcheck-$$-source-sum"
 	exit "$1"
+}
+
+# Assure that the given files exist and have matching moification times and size.
+function statMatch {
+	stats="$(stat --printf '%s-%Y-' "$1" "$2" 2>&1)"
+	if [[ ! "$stats" =~ ^([0-9]*)-([0-9]*)-([0-9]*)-([0-9]*)-$ ]] || \
+		[ ! "${BASH_REMATCH[1]}" == "${BASH_REMATCH[3]}" ] || \
+		[ ! "${BASH_REMATCH[2]}" == "${BASH_REMATCH[4]}" ]; then
+		return 1
+	fi
+	return 0
 }
 
 if [ "$1" == "--help" ]; then
@@ -64,10 +76,7 @@ for i in $order; do
 	backupFile="${backupFiles[$i]}"
 	sourceFile="${backupFiles[$i]/"$1"/$2}"
 
-	backupFileStat="$(stat -c '%s-%Y' "$backupFile" 2>&1)"
-	sourceFileStat="$(stat -c '%s-%Y' "$sourceFile" 2>&1)"
-
-	if [ ! "$backupFileStat" == "$sourceFileStat" ]; then
+	if ! statMatch "$backupFile" "$sourceFile"; then
 		echo -n '_'
 		continue
 	fi
@@ -94,10 +103,7 @@ for i in $order; do
 		echo "Warning: Hashing '$sourceFile' failed ($sourceFileSum), continuing."
 		continue
 	else
-		backupFileStat="$(stat -c '%s-%Y' "$backupFile" 2>&1)"
-		sourceFileStat="$(stat -c '%s-%Y' "$sourceFile" 2>&1)"
-
-		if [ ! "$backupFileStat" == "$sourceFileStat" ]; then
+		if ! statMatch "$backupFile" "$sourceFile"; then
 			# Check if the file stats still match
 			echo -n '_'
 			continue

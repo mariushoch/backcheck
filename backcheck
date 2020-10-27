@@ -1,0 +1,122 @@
+#!/bin/bash
+
+function tearDown {
+	rm -f "/tmp/backcheck-$$-backup-sum" "/tmp/backcheck-$$-source-sum"
+	exit "$1"
+}
+
+if [ "$1" == "--help" ]; then
+	echo "Backcheck 0.0.1"
+	echo "Usage: backcheck [--timeout s] backup-path source-path"
+	echo
+	echo "Check that the files in backup-path are readable and identical to the ones in source-path."
+	echo "This can be used to partially (with --timeout, checking a random selection of files) or "
+	echo "to fully test a backup (done by rsync -a or something similar)."
+	echo
+	echo -e "\t--timeout\t\tAbort after checking files for at least this many seconds."
+
+	exit 0
+fi
+
+# If possible, call ourselves in bwrap with the source and backup paths read only again
+# that way we can ensure to not alter the file's atime.
+if [ ! "$1" == "--postwrap" ] && [ -f "$0" ] && command -v bwrap >/dev/null 2>&1; then
+	backupPath="${*: -2:1}"
+	sourcePath="${*: -1}"
+	exec bwrap --dev-bind / / --ro-bind "$backupPath" "$backupPath" --ro-bind "$sourcePath" "$sourcePath" "$0" --postwrap "$@"
+elif [ "$1" == "--postwrap" ]; then
+	shift
+fi
+
+timeout=-1
+if [ "$1" == "--timeout" ]; then
+	timeout="$2"
+	shift 2
+fi
+
+# Derived from https://stackoverflow.com/a/23357277
+backupFiles=()
+while IFS=  read -r -d $'\0'; do
+	backupFiles+=("$REPLY")
+done < <(find "$1" -type f -print0)
+
+backupFilesCount="${#backupFiles[@]}"
+if [ "$backupFilesCount" -eq 0 ]; then
+	echo "Nothing to check, aborting."
+
+	exit 0
+fi
+order="$(shuf -i 0-$(((backupFilesCount - 1))))"
+
+processed=0
+startTime="$(date +"%s")"
+
+mkfifo --mode=600 /tmp/backcheck-$$-backup-sum
+mkfifo --mode=600 /tmp/backcheck-$$-source-sum
+for i in $order; do
+	if [ "$timeout" -gt 0 ]; then
+		if [ $(((startTime + timeout))) -lt "$(date +"%s")" ]; then
+			break
+		fi
+	fi
+	processed=$(((processed + 1)))
+
+	backupFile="${backupFiles[$i]}"
+	sourceFile="${backupFiles[$i]/"$1"/$2}"
+
+	backupFileStat="$(stat -c '%s-%Y' "$backupFile" 2>&1)"
+	sourceFileStat="$(stat -c '%s-%Y' "$sourceFile" 2>&1)"
+
+	if [ ! "$backupFileStat" == "$sourceFileStat" ]; then
+		echo -n '_'
+		continue
+	fi
+
+	(
+		md5sum "$backupFile" 2>&1 \
+			| awk '/^\\?[0-9a-f]{32} / {print gensub(/^\\/, "", "g", $1)} !/^\\?[0-9a-f]{32} / {print $0}' > /tmp/backcheck-$$-backup-sum &
+		md5sum "$sourceFile" 2>&1 \
+			| awk '/^\\?[0-9a-f]{32} / {print gensub(/^\\/, "", "g", $1)} !/^\\?[0-9a-f]{32} / {print $0}' > /tmp/backcheck-$$-source-sum &
+	) &
+	backupFileSum="$(cat /tmp/backcheck-$$-backup-sum)"
+	sourceFileSum="$(cat /tmp/backcheck-$$-source-sum)"
+
+	if [ "$backupFileSum" == "$sourceFileSum" ]; then
+		echo -n '.'
+	elif [[ ! "$backupFileSum" =~ ^\\?[0-9a-f]{32}$ ]]; then
+		echo
+		echo
+		echo "Hashing '$backupFile' failed, aborting."
+
+		tearDown 255
+	elif [[ ! "$sourceFileSum" =~ ^\\?[0-9a-f]{32}$ ]]; then
+		echo
+		echo "Warning: Hashing '$sourceFile' failed ($sourceFileSum), continuing."
+		continue
+	else
+		backupFileStat="$(stat -c '%s-%Y' "$backupFile" 2>&1)"
+		sourceFileStat="$(stat -c '%s-%Y' "$sourceFile" 2>&1)"
+
+		if [ ! "$backupFileStat" == "$sourceFileStat" ]; then
+			# Check if the file stats still match
+			echo -n '_'
+			continue
+		fi
+
+		echo
+		echo
+
+		echo "Checksum missmatch '$backupFile' ($backupFileSum) <> '$sourceFile' ($sourceFileSum), aborting."
+
+		tearDown 255
+	fi
+done
+
+echo
+if [ "$processed" -eq "$backupFilesCount" ]; then
+	echo "Successfully processed $processed files."
+else
+	echo "Timeout reached, successfully processed $processed files."
+fi
+
+tearDown 0

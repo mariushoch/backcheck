@@ -106,40 +106,42 @@ function testBackcheck {
 	[ "$status" -eq 255 ]
 }
 @test "backcheck: Timeout" {
+	if ! command -v faketime >/dev/null 2>&1; then
+		skip "Needs faketime"
+	fi
+
 	local i=0
 	while [ "$i" -lt 11 ]; do
 			echo "$i" > "$sourceDir"/"$i"
 		i=$(((i + 1)))
 	done
 
-		rsync -a "$sourceDir"/ "$backupDir"
+	rsync -a "$sourceDir"/ "$backupDir"
 
-	timeFile="$(mktemp)"
-	fakeDate="$(mktemp)"
-	chmod +x "$fakeDate"
+	fakeMd5sum="$(mktemp)"
+	chmod +x "$fakeMd5sum"
 
-	cat > "$fakeDate" <<SCRIPT
+	cat > "$fakeMd5sum" <<SCRIPT
 #!/bin/bash
-time="\$(cat "$timeFile")"
-echo \$(((time + 1))) > "$timeFile"
-echo \$time
+sleep 100
+echo "d41d8cd98f00b204e9800998ecf8427e /this/is/ignored"
 SCRIPT
-	date +"%s" > "$timeFile"
 
+	# Run with a timeout of 350s which will allow 3 of the above 100s sleeps (but it's far enough away from allowing 2 or 4 to be safe)
 	run bwrap \
 		--bind / / \
 		--dev /dev \
 		--bind /tmp /tmp \
 		--setenv PATH "/usr/local/bin:$PATH" \
 		--tmpfs "/usr/local/bin" \
-		--ro-bind "$fakeDate" "/usr/local/bin/date" \
-	"$BATS_TEST_DIRNAME"/backcheck --timeout 5 "$backupDir" "$sourceDir"
+		--ro-bind "$fakeMd5sum" "/usr/local/bin/md5sum" \
+	faketime -f '+0y,x500' "$BATS_TEST_DIRNAME"/backcheck --timeout 250 "$backupDir" "$sourceDir"
 
-	[ "${lines[0]}" == "....." ]
-	[ "${lines[1]}" == 'Timeout reached, successfully processed 5 files.' ]
+	[ "${lines[0]}" == "..." ]
+	[ "${lines[1]}" == 'Timeout reached, successfully processed 3 files.' ]
 	[ "$status" -eq 0 ]
 
-	rm -rf "$timeFile" "$fakeDate"
+	rm -rf "$fakeMd5sum"
 }
 @test "backcheck: md5sum run in parralel" {
 	local i=0

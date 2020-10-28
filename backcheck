@@ -61,26 +61,32 @@ fi
 order="$(shuf -i 0-$(((backupFilesCount - 1))))"
 
 processed=0
+# Note: Once we drop bash 4 support, switch to EPOCHSECONDS here (and below)
 startTime="$(date +"%s")"
+endTime=$(((startTime + timeout)))
 
 mkfifo --mode=600 /tmp/backcheck-$$-backup-sum /tmp/backcheck-$$-source-sum
 for i in $order; do
 	if [ "$timeout" -gt 0 ]; then
-		if [ $(((startTime + timeout))) -lt "$(date +"%s")" ]; then
+		if [ "$endTime" -lt "$(date +"%s")" ]; then
 			break
 		fi
 	fi
-	processed=$(((processed + 1)))
+	((( processed++ )))
 
 	backupFile="${backupFiles[$i]}"
-	sourceFile="${backupFiles[$i]/"$1"/$2}"
+	sourceFile="${backupFile/"$1"/$2}"
 
 	if ! statMatch "$backupFile" "$sourceFile"; then
 		echo -n '_'
 		continue
 	fi
 
+	# We need to use command substitution here in order for the md5sums to start in parallel
+	# (before we're trying to read from the named pipes).
+	# shellcheck disable=2005
 	echo "$(md5sum "$backupFile" 2>&1)" > /tmp/backcheck-$$-backup-sum &
+	# shellcheck disable=2005
 	echo "$(md5sum "$sourceFile" 2>&1)" > /tmp/backcheck-$$-source-sum &
 	backupFileSum="$(</tmp/backcheck-$$-backup-sum)"
 	sourceFileSum="$(</tmp/backcheck-$$-source-sum)"

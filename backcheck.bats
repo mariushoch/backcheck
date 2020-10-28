@@ -143,7 +143,7 @@ SCRIPT
 
 	rm -rf "$fakeMd5sum"
 }
-@test "backcheck: md5sum run in parralel" {
+@test "backcheck: md5sum run in parallel" {
 	local i=0
 	while [ "$i" -lt 4 ]; do
 			echo "$i" > "$sourceDir"/"$i"

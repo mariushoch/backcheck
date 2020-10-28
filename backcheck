@@ -63,8 +63,7 @@ order="$(shuf -i 0-$(((backupFilesCount - 1))))"
 processed=0
 startTime="$(date +"%s")"
 
-mkfifo --mode=600 /tmp/backcheck-$$-backup-sum
-mkfifo --mode=600 /tmp/backcheck-$$-source-sum
+mkfifo --mode=600 /tmp/backcheck-$$-backup-sum /tmp/backcheck-$$-source-sum
 for i in $order; do
 	if [ "$timeout" -gt 0 ]; then
 		if [ $(((startTime + timeout))) -lt "$(date +"%s")" ]; then

@@ -143,7 +143,7 @@ SCRIPT
 }
 @test "backcheck: md5sum run in parralel" {
 	local i=0
-	while [ "$i" -lt 6 ]; do
+	while [ "$i" -lt 4 ]; do
 			echo "$i" > "$sourceDir"/"$i"
 		i=$(((i + 1)))
 	done
@@ -174,7 +174,7 @@ done
 echo "d41d8cd98f00b204e9800998ecf8427e /this/is/ignored"
 
 # Sleep to make sure both instances noticed each other, before going in-active again
-sleep 0.01
+sleep 0.1
 (sleep 0.005; echo -n"" > "\$trackingFile") &
 SCRIPT
 
@@ -188,7 +188,7 @@ SCRIPT
 	"$BATS_TEST_DIRNAME"/backcheck "$backupDir" "$sourceDir"
 
 	[ "$status" -eq 0 ]
-	[ "${lines[0]}" == "......" ]
+	[ "${lines[0]}" == "...." ]
 
 	rm -rf "$fakeMd5sum" "$trackingFileSource" "$trackingFileBackup"
 }

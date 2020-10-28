@@ -135,7 +135,7 @@ SCRIPT
 		--setenv PATH "/usr/local/bin:$PATH" \
 		--tmpfs "/usr/local/bin" \
 		--ro-bind "$fakeMd5sum" "/usr/local/bin/md5sum" \
-	faketime -f '+0y,x500' "$BATS_TEST_DIRNAME"/backcheck --timeout 250 "$backupDir" "$sourceDir"
+	faketime -f '+0y,x250' "$BATS_TEST_DIRNAME"/backcheck --timeout 250 "$backupDir" "$sourceDir"
 
 	[ "${lines[0]}" == "..." ]
 	[ "${lines[1]}" == 'Timeout reached, successfully processed 3 files.' ]

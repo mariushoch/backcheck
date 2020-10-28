@@ -81,10 +81,8 @@ for i in $order; do
 		continue
 	fi
 
-	(
-		md5sum "$backupFile" > /tmp/backcheck-$$-backup-sum 2>&1 &
-		md5sum "$sourceFile" > /tmp/backcheck-$$-source-sum 2>&1
-	) &
+	echo "$(md5sum "$backupFile" 2>&1)" > /tmp/backcheck-$$-backup-sum &
+	echo "$(md5sum "$sourceFile" 2>&1)" > /tmp/backcheck-$$-source-sum &
 	backupFileSum="$(</tmp/backcheck-$$-backup-sum)"
 	sourceFileSum="$(</tmp/backcheck-$$-source-sum)"
 	if [[ "$backupFileSum" =~ ^\\?([0-9a-f]{32}) ]]; then
@@ -92,7 +90,7 @@ for i in $order; do
 	else
 		echo
 		echo
-		echo "Hashing '$backupFile' failed, aborting."
+		echo "Hashing '$backupFile' failed ($backupFileSum), aborting."
 
 		tearDown 255
 	fi

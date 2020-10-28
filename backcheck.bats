@@ -141,6 +141,57 @@ SCRIPT
 
 	rm -rf "$timeFile" "$fakeDate"
 }
+@test "backcheck: md5sum run in parralel" {
+	local i=0
+	while [ "$i" -lt 6 ]; do
+			echo "$i" > "$sourceDir"/"$i"
+		i=$(((i + 1)))
+	done
+
+	rsync -a "$sourceDir"/ "$backupDir"
+
+	trackingFileSource="$(mktemp)"
+	trackingFileBackup="$(mktemp)"
+	fakeMd5sum="$(mktemp)"
+	chmod +x "$fakeMd5sum"
+
+	cat > "$fakeMd5sum" <<SCRIPT
+#!/bin/bash
+if [[ "\$1" =~ ^$backupDir ]]; then
+	trackingFile="$trackingFileBackup"
+else
+	trackingFile="$trackingFileSource"
+fi
+if [ "\$(<"\$trackingFile")" == "active" ]; then
+	echo "\$trackingFile should not be active at this point!"
+	exit 255
+fi
+echo -n "active" > "\$trackingFile"
+while [ ! "\$(<"$trackingFileBackup")" == "active" ] || [ ! "\$(<"$trackingFileSource")" == "active" ]; do
+	# Only continue if both are running side-by-side
+	sleep 0.005
+done
+echo "d41d8cd98f00b204e9800998ecf8427e /this/is/ignored"
+
+# Sleep to make sure both instances noticed each other, before going in-active again
+sleep 0.01
+(sleep 0.005; echo -n"" > "\$trackingFile") &
+SCRIPT
+
+	run timeout 5 bwrap \
+		--bind / / \
+		--dev /dev \
+		--bind /tmp /tmp \
+		--setenv PATH "/usr/local/bin:$PATH" \
+		--tmpfs "/usr/local/bin" \
+		--ro-bind "$fakeMd5sum" "/usr/local/bin/md5sum" \
+	"$BATS_TEST_DIRNAME"/backcheck "$backupDir" "$sourceDir"
+
+	[ "$status" -eq 0 ]
+	[ "${lines[0]}" == "......" ]
+
+	rm -rf "$fakeMd5sum" "$trackingFileSource" "$trackingFileBackup"
+}
 @test "backcheck: backup md5sum failure" {
 	local i=0
 	while [ "$i" -lt 11 ]; do
@@ -171,7 +222,7 @@ SCRIPT
 		--ro-bind "$fakeMd5sum" "/usr/local/bin/md5sum" \
 	"$BATS_TEST_DIRNAME"/backcheck "$backupDir" "$sourceDir"
 
-	echo "$output" | grep -qF "Hashing '$backupDir/5' failed, aborting."
+	echo "$output" | grep -qF "Hashing '$backupDir/5' failed (blah blah IO error blah), aborting."
 	[ "$status" -eq 255 ]
 
 	rm -rf "$fakeMd5sum"

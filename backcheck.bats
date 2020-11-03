@@ -326,7 +326,7 @@ SCRIPT
 
 	# Make sure the named pipes have been removed
 	[ "$(find "$tmpTmp" -name 'backcheck-*')" == "" ]
-	[[ "$output" =~ Successfully\ processed\ 0\ files\ \(roughly\ [0-9]*K\)\.$ ]]
+	[[ "$output" =~ Successfully\ processed\ 0\ files\ \(roughly\ [0-9]*(\.[0-9])?K\)\.$ ]]
 	[ "$status" -eq 124 ]
 
 	rm -f "$fakeMd5sum"

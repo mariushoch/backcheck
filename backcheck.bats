@@ -75,7 +75,7 @@ function testBackcheck {
 }
 @test "backcheck --verbose: Missmatch (different stat)" {
 	echo 2323 > "$sourceDir"/a-file
-	echo $RANDOM > "$sourceDir"/b-file
+	echo 123 > "$sourceDir"/b-file
 	rsync -a "$sourceDir"/ "$backupDir"
 
 	echo aa > "$backupDir"/b-file
@@ -83,17 +83,64 @@ function testBackcheck {
 	touch -d'2005-01-01 1:1:1' "$backupDir"/b-file
 
 	run "$BATS_TEST_DIRNAME"/backcheck --verbose "$backupDir" "$sourceDir"
-	echo "$output" | grep -Fq "File modification time or size missmatch: '$backupDir/b-file' <> '$sourceDir/b-file'."
+
+	echo "$output" | grep -Fq "File size mismatch: '$backupDir/b-file' <> '$sourceDir/b-file'."
 	# The final message can be on either the third or fourth line.
 	[[ "${lines[2]}${lines[3]}" =~ Successfully\ processed\ 2\ files\ \(roughly\ [2-4][0-9]K\)\.$ ]]
 	[ "$status" -eq 0 ]
 }
-@test "backcheck --debug: Missmatch (different stat)" {
+@test "backcheck --verbose: Source file does not exist" {
 	echo 2323 > "$sourceDir"/a-file
-	echo $RANDOM > "$sourceDir"/b-file
+	echo 123 > "$sourceDir"/b-file
 	rsync -a "$sourceDir"/ "$backupDir"
 
-	echo aa > "$backupDir"/b-file
+	rm "$sourceDir"/b-file
+
+	run "$BATS_TEST_DIRNAME"/backcheck --verbose "$backupDir" "$sourceDir"
+
+	echo "$output" | grep -Fq "File does not exist: '$sourceDir/b-file'."
+	# The final message can be on either the third or fourth line.
+	[[ "${lines[2]}${lines[3]}" =~ Successfully\ processed\ 2\ files\ \(roughly\ [2-4][0-9]K\)\.$ ]]
+	[ "$status" -eq 0 ]
+}
+@test "backcheck --verbose: Backup file does no longer exist" {
+	echo 2323 > "$sourceDir"/a-file
+	echo 123 > "$sourceDir"/b-file
+	rsync -a "$sourceDir"/ "$backupDir"
+
+	fakeFind="$(mktemp)"
+	chmod +x "$fakeFind"
+
+	cat > "$fakeFind" <<SCRIPT
+#!/bin/bash
+/usr/bin/find "\$@"
+
+rm /tmp/rw-backupDir/b-file
+SCRIPT
+
+	run bwrap \
+		--bind / / \
+		--dev /dev \
+		--bind /tmp /tmp \
+		--bind "$backupDir" /tmp/rw-backupDir \
+		--setenv PATH "/usr/local/bin:$PATH" \
+		--tmpfs "/usr/local/bin" \
+		--ro-bind "$fakeFind" "/usr/local/bin/find" \
+	"$BATS_TEST_DIRNAME"/backcheck --verbose "$backupDir" "$sourceDir"
+
+	echo "$output" | grep -Fq "File does not exist: '$backupDir/b-file'."
+	# The final message can be on either the third or fourth line.
+	[[ "${lines[2]}${lines[3]}" =~ Successfully\ processed\ 2\ files\ \(roughly\ [2-4][0-9]K\)\.$ ]]
+	[ "$status" -eq 0 ]
+
+	rm -f "$fakeFind"
+}
+@test "backcheck --debug: Missmatch (different stat)" {
+	echo 2323 > "$sourceDir"/a-file
+	echo AAA > "$sourceDir"/b-file
+	rsync -a "$sourceDir"/ "$backupDir"
+
+	echo BBB > "$backupDir"/b-file
 	# Make sure the modified time actually differs
 	touch -d'2005-01-01 1:1:1' "$backupDir"/b-file
 
@@ -101,7 +148,7 @@ function testBackcheck {
 	echo "$output" | grep -Fq "Checking '$backupDir/b-file' <> '$sourceDir/b-file'."
 	echo "$output" | grep -Fq "Checking '$backupDir/a-file' <> '$sourceDir/a-file'."
 	# --debug implies --verbose
-	echo "$output" | grep -Fq "File modification time or size missmatch: '$backupDir/b-file' <> '$sourceDir/b-file'."
+	echo "$output" | grep -Fq "File modification time mismatch: '$backupDir/b-file' <> '$sourceDir/b-file'."
 	[[ "${lines[5]}" =~ ^Successfully\ processed\ 2\ files\ \(roughly\ [2-4][0-9]K\)\.$ ]]
 	[ "$status" -eq 0 ]
 }
@@ -115,7 +162,7 @@ function testBackcheck {
 
 	run "$BATS_TEST_DIRNAME"/backcheck "$backupDir" "$sourceDir"
 	[ "$status" -eq 255 ]
-	echo "$output" | grep -F "Checksum missmatch '$backupDir/b-file' (bfcc9da4f2e1d313c63cd0a4ee7604e9) <> '$sourceDir/b-file' (d404401c8c6495b206fc35c95e55a6d5), aborting."
+	echo "$output" | grep -F "Checksum mismatch '$backupDir/b-file' (bfcc9da4f2e1d313c63cd0a4ee7604e9) <> '$sourceDir/b-file' (d404401c8c6495b206fc35c95e55a6d5), aborting."
 }
 @test "backcheck: Strange file names" {
 	local backupDir="$backupDir"
@@ -135,7 +182,7 @@ function testBackcheck {
 	[[ "${lines[1]}" =~ ^Successfully\ processed\ 3\ files\ \(roughly\ [3-6][0-9]K\)\.$ ]]
 	[ "$status" -eq 0 ]
 }
-@test "backcheck: Strange file names (missmatch)" {
+@test "backcheck: Strange file names (mismatch)" {
 	local backupDir="$backupDir"
 	backupDir="$(echo -e "$backupDir/a\\ha\n[a]{4}((/")"
 	mkdir "$backupDir"
@@ -153,7 +200,7 @@ function testBackcheck {
 
 	run "$BATS_TEST_DIRNAME"/backcheck "$backupDir" "$sourceDir"
 
-	[[ "$output" =~ .*Checksum\ missmatch.*\(8f459eed987d0b1587842fda328ca098\).*\(e06c22e3fafeb40b9556bfd522e2c73a\),\ aborting\. ]]
+	[[ "$output" =~ .*Checksum\ mismatch.*\(8f459eed987d0b1587842fda328ca098\).*\(e06c22e3fafeb40b9556bfd522e2c73a\),\ aborting\. ]]
 	[ "$status" -eq 255 ]
 }
 @test "backcheck: file changed while checking" {

@@ -294,6 +294,38 @@ SCRIPT
 
 	rm -rf "$fakeMd5sum"
 }
+@test "backcheck: Handles SIGTERM" {
+	local i=0
+	while [ "$i" -lt 3 ]; do
+			echo "$i" > "$sourceDir"/"$i"
+		i=$(((i + 1)))
+	done
+
+	rsync -a "$sourceDir"/ "$backupDir"
+
+	fakeMd5sum="$(mktemp)"
+	chmod +x "$fakeMd5sum"
+
+	cat > "$fakeMd5sum" <<SCRIPT
+#!/bin/bash
+sleep 100
+echo "d41d8cd98f00b204e9800998ecf8427e /this/is/ignored"
+SCRIPT
+
+	run bwrap \
+		--bind / / \
+		--dev /dev \
+		--bind /tmp /tmp \
+		--setenv PATH "/usr/local/bin:$PATH" \
+		--tmpfs "/usr/local/bin" \
+		--ro-bind "$fakeMd5sum" "/usr/local/bin/md5sum" \
+	timeout 0.5 "$BATS_TEST_DIRNAME"/backcheck "$backupDir" "$sourceDir"
+
+	[[ "$output" =~ Successfully\ processed\ 0\ files\ \(roughly\ [0-9]*K\)\.$ ]]
+	[ "$status" -eq 124 ]
+
+	rm -rf "$fakeMd5sum"
+}
 @test "backcheck: md5sum run in parallel" {
 	local i=0
 	while [ "$i" -lt 4 ]; do

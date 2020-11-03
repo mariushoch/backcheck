@@ -1,10 +1,43 @@
 #!/bin/bash
 
+rcharBefore=0
+finishing=0
+
+function handleTrap {
+	# The current file is not yet (fully) processed, thus decrement counter
+	(( processed-- ))
+	if [ "$processed" -lt 0 ]; then
+		processed=0
+	fi
+	finish
+}
+function finish {
+	if [ "$finishing" -gt 0 ]; then
+		# Make sure we don't call this more than once (race condition)
+		return
+	fi
+	finishing=1
+	local rchar="$(($(grep -oP '(?<=rchar: ).*' /proc/$$/io) - rcharBefore))"
+	sizeEstimate="$(numfmt --to=iec "$((rchar / 2))")"
+
+	echo
+	if [ "$1" == 'timeout' ]; then
+		echo "Timeout reached, successfully processed $processed files (roughly $sizeEstimate)."
+	else
+		echo "Successfully processed $processed files (roughly $sizeEstimate)."
+	fi
+
+	tearDown 0
+}
+
 # Remove temporary files and exit
 function tearDown {
 	rm -f "/tmp/backcheck-$$-backup-sum" "/tmp/backcheck-$$-source-sum"
+	# shellcheck disable=SC2046
+	kill $(jobs -p) 2>/dev/null
 	exit "$1"
 }
+trap handleTrap SIGINT SIGTERM
 
 # Assure that the given files exist and have matching moification times and size.
 function statMatch {
@@ -36,7 +69,7 @@ function statMatch {
 }
 
 function usage {
-	echo "Backcheck 1.1.0"
+	echo "Backcheck 1.2.0"
 	echo "Usage: backcheck [--timeout s] [--verbose|--debug] backup-path source-path"
 	echo
 	echo "Check that the files in backup-path are readable and identical to the ones in source-path."
@@ -121,7 +154,7 @@ processed=0
 startTime="$(date +"%s")"
 endTime=$(((startTime + timeout)))
 
-rchar="$(grep -oP '(?<=rchar: ).*' /proc/$$/io)"
+rcharBefore="$(grep -oP '(?<=rchar: ).*' /proc/$$/io)"
 
 mkfifo --mode=600 /tmp/backcheck-$$-backup-sum /tmp/backcheck-$$-source-sum
 for i in $(shuf -i 0-$(((backupFilesCount - 1)))); do
@@ -186,14 +219,8 @@ for i in $(shuf -i 0-$(((backupFilesCount - 1)))); do
 	fi
 done
 
-rchar="$(($(grep -oP '(?<=rchar: ).*' /proc/$$/io) - rchar))"
-sizeEstimate="$(numfmt --to=iec "$((rchar / 2))")"
-
-echo
-if [ "$processed" -eq "$backupFilesCount" ]; then
-	echo "Successfully processed $processed files (roughly $sizeEstimate)."
+if [ "$processed" -ne "$backupFilesCount" ]; then
+	finish timeout
 else
-	echo "Timeout reached, successfully processed $processed files (roughly $sizeEstimate)."
+	finish
 fi
-
-tearDown 0

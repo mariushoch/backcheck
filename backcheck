@@ -58,15 +58,16 @@ if [ "$backupFilesCount" -eq 0 ]; then
 
 	exit 0
 fi
-order="$(shuf -i 0-$(((backupFilesCount - 1))))"
 
 processed=0
 # Note: Once we drop bash 4 support, switch to EPOCHSECONDS here (and below)
 startTime="$(date +"%s")"
 endTime=$(((startTime + timeout)))
 
+rchar="$(grep -oP '(?<=rchar: ).*' /proc/$$/io)"
+
 mkfifo --mode=600 /tmp/backcheck-$$-backup-sum /tmp/backcheck-$$-source-sum
-for i in $order; do
+for i in $(shuf -i 0-$(((backupFilesCount - 1)))); do
 	if [ "$timeout" -gt 0 ]; then
 		if [ "$endTime" -lt "$(date +"%s")" ]; then
 			break
@@ -125,11 +126,14 @@ for i in $order; do
 	fi
 done
 
+rchar="$(($(grep -oP '(?<=rchar: ).*' /proc/$$/io) - rchar))"
+sizeEstimate="$(numfmt --to=iec "$((rchar / 2))")"
+
 echo
 if [ "$processed" -eq "$backupFilesCount" ]; then
-	echo "Successfully processed $processed files."
+	echo "Successfully processed $processed files (roughly $sizeEstimate)."
 else
-	echo "Timeout reached, successfully processed $processed files."
+	echo "Timeout reached, successfully processed $processed files (roughly $sizeEstimate)."
 fi
 
 tearDown 0

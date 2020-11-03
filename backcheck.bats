@@ -19,7 +19,7 @@ function testBackcheck {
 	atimeBefore="$(stat --format=%X "$sourceDir/b-file")"
 	run "$BATS_TEST_DIRNAME"/backcheck "$@" "$backupDir" "$sourceDir"
 	[ "${lines[0]}" == ".._" ] || [ "${lines[0]}" == "._." ] || [ "${lines[0]}" == "_.." ]
-	[ "${lines[1]}" == 'Successfully processed 3 files.' ]
+	[[ "${lines[1]}" =~ ^Successfully\ processed\ 3\ files\ \(roughly\ [3-6][0-9]K\)\.$ ]]
 	[ "$(echo "$output" | wc -l)" -eq 2 ]
 	# Make sure that backcheck doesn't change a file's atime
 	[ "$(stat --format=%X "$sourceDir/b-file")" -eq "$atimeBefore" ]
@@ -51,7 +51,7 @@ function testBackcheck {
 
 	run "$BATS_TEST_DIRNAME"/backcheck "$backupDir" "$sourceDir"
 	[ "${lines[0]}" == "._" ] || [ "${lines[0]}" == '_.' ]
-	[ "${lines[1]}" == 'Successfully processed 2 files.' ]
+	[[ "${lines[1]}" =~ ^Successfully\ processed\ 2\ files\ \(roughly\ [2-4][0-9]K\)\.$ ]]
 	[ "$status" -eq 0 ]
 }
 @test "backcheck: Missmatch (matching stat)" {
@@ -81,7 +81,7 @@ function testBackcheck {
 
 	run "$BATS_TEST_DIRNAME"/backcheck "$backupDir" "$sourceDir"
 	[ "${lines[0]}" == "..." ]
-	[ "${lines[1]}" == 'Successfully processed 3 files.' ]
+	[[ "${lines[1]}" =~ ^Successfully\ processed\ 3\ files\ \(roughly\ [3-6][0-9]K\)\.$ ]]
 	[ "$status" -eq 0 ]
 }
 @test "backcheck: Strange file names (missmatch)" {
@@ -138,7 +138,7 @@ SCRIPT
 	faketime -f '+0y,x250' "$BATS_TEST_DIRNAME"/backcheck --timeout 250 "$backupDir" "$sourceDir"
 
 	[ "${lines[0]}" == "..." ]
-	[ "${lines[1]}" == 'Timeout reached, successfully processed 3 files.' ]
+	[[ "${lines[1]}" =~ ^Timeout\ reached,\ successfully\ processed\ 3\ files\ \(roughly\ 1[0-9]{2}K\)\.$ ]]
 	[ "$status" -eq 0 ]
 
 	rm -rf "$fakeMd5sum"

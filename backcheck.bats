@@ -59,6 +59,17 @@ function testBackcheck {
 	[ "$output" == "Source directory '/dafdfjhk' doesn't exist, aborting." ]
 	[ "$status" -eq 1 ]
 }
+@test "backcheck: Size estimate" {
+	# Read 5M
+	head -c 5242880 /dev/urandom > "$sourceDir"/a-file
+	rsync -a "$sourceDir"/ "$backupDir"
+
+	run "$BATS_TEST_DIRNAME"/backcheck "$backupDir" "$sourceDir"
+
+	[ "${lines[0]}" == "." ]
+	[[ "${lines[1]}" =~ ^Successfully\ processed\ 1\ files\ \(roughly\ 5(\.[0-5])?M\)\.$ ]]
+	[ "$status" -eq 0 ]
+}
 @test "backcheck: Mismatch (different stat)" {
 	echo 2323 > "$sourceDir"/a-file
 	echo $RANDOM > "$sourceDir"/b-file

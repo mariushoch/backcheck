@@ -19,7 +19,7 @@ function testBackcheck {
 	atimeBefore="$(stat --format=%X "$sourceDir/b-file")"
 	run "$BATS_TEST_DIRNAME"/backcheck "$@" "$backupDir" "$sourceDir"
 	[ "${lines[0]}" == ".._" ] || [ "${lines[0]}" == "._." ] || [ "${lines[0]}" == "_.." ]
-	[[ "${lines[1]}" =~ ^Successfully\ processed\ 3\ files\ \(roughly\ [3-6][0-9]K\)\.$ ]]
+	[[ "${lines[1]}" =~ ^Successfully\ processed\ 3\ files\ \(roughly\ [2-6][0-9]K\)\.$ ]]
 	[ "$(echo "$output" | wc -l)" -eq 2 ]
 	# Make sure that backcheck doesn't change a file's atime
 	[ "$(stat --format=%X "$sourceDir/b-file")" -eq "$atimeBefore" ]
@@ -70,7 +70,7 @@ function testBackcheck {
 
 	run "$BATS_TEST_DIRNAME"/backcheck "$backupDir" "$sourceDir"
 	[ "${lines[0]}" == "._" ] || [ "${lines[0]}" == '_.' ]
-	[[ "${lines[1]}" =~ ^Successfully\ processed\ 2\ files\ \(roughly\ [2-4][0-9]K\)\.$ ]]
+	[[ "${lines[1]}" =~ ^Successfully\ processed\ 2\ files\ \(roughly\ [1-4][0-9]K\)\.$ ]]
 	[ "$status" -eq 0 ]
 }
 @test "backcheck --verbose: Missmatch (different stat)" {
@@ -86,7 +86,7 @@ function testBackcheck {
 
 	echo "$output" | grep -Fq "File size mismatch: '$backupDir/b-file' <> '$sourceDir/b-file'."
 	# The final message can be on either the third or fourth line.
-	[[ "${lines[2]}${lines[3]}" =~ Successfully\ processed\ 2\ files\ \(roughly\ [2-4][0-9]K\)\.$ ]]
+	[[ "${lines[2]}${lines[3]}" =~ Successfully\ processed\ 2\ files\ \(roughly\ [1-4][0-9]K\)\.$ ]]
 	[ "$status" -eq 0 ]
 }
 @test "backcheck --verbose: Source file does not exist" {
@@ -100,7 +100,7 @@ function testBackcheck {
 
 	echo "$output" | grep -Fq "File does not exist: '$sourceDir/b-file'."
 	# The final message can be on either the third or fourth line.
-	[[ "${lines[2]}${lines[3]}" =~ Successfully\ processed\ 2\ files\ \(roughly\ [2-4][0-9]K\)\.$ ]]
+	[[ "${lines[2]}${lines[3]}" =~ Successfully\ processed\ 2\ files\ \(roughly\ [1-4][0-9]K\)\.$ ]]
 	[ "$status" -eq 0 ]
 }
 @test "backcheck --verbose: Backup file does no longer exist" {
@@ -130,7 +130,7 @@ SCRIPT
 
 	echo "$output" | grep -Fq "File does not exist: '$backupDir/b-file'."
 	# The final message can be on either the third or fourth line.
-	[[ "${lines[2]}${lines[3]}" =~ Successfully\ processed\ 2\ files\ \(roughly\ [2-4][0-9]K\)\.$ ]]
+	[[ "${lines[2]}${lines[3]}" =~ Successfully\ processed\ 2\ files\ \(roughly\ [1-4][0-9]K\)\.$ ]]
 	[ "$status" -eq 0 ]
 
 	rm -f "$fakeFind"
@@ -150,7 +150,7 @@ SCRIPT
 	echo "$output" | grep -Fq "Checking '$backupDir/a-file' <> '$sourceDir/a-file'."
 	# --debug implies --verbose
 	echo "$output" | grep -Fq "File modification time mismatch: '$backupDir/b-file' <> '$sourceDir/b-file'."
-	[[ "${lines[5]}" =~ ^Successfully\ processed\ 2\ files\ \(roughly\ [2-4][0-9]K\)\.$ ]]
+	[[ "${lines[5]}" =~ ^Successfully\ processed\ 2\ files\ \(roughly\ [1-4][0-9]K\)\.$ ]]
 	[ "$status" -eq 0 ]
 }
 @test "backcheck: Missmatch (matching stat)" {
@@ -180,7 +180,7 @@ SCRIPT
 
 	run "$BATS_TEST_DIRNAME"/backcheck "$backupDir" "$sourceDir"
 	[ "${lines[0]}" == "..." ]
-	[[ "${lines[1]}" =~ ^Successfully\ processed\ 3\ files\ \(roughly\ [3-6][0-9]K\)\.$ ]]
+	[[ "${lines[1]}" =~ ^Successfully\ processed\ 3\ files\ \(roughly\ [2-6][0-9]K\)\.$ ]]
 	[ "$status" -eq 0 ]
 }
 @test "backcheck: Strange file names (mismatch)" {

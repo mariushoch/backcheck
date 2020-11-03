@@ -292,7 +292,7 @@ SCRIPT
 	[[ "${lines[1]}" =~ ^Timeout\ reached,\ successfully\ processed\ 3\ files\ \(roughly\ 1[0-9]{2}K\)\.$ ]]
 	[ "$status" -eq 0 ]
 
-	rm -rf "$fakeMd5sum"
+	rm -f "$fakeMd5sum"
 }
 @test "backcheck: Handles SIGTERM" {
 	local i=0
@@ -324,7 +324,7 @@ SCRIPT
 	[[ "$output" =~ Successfully\ processed\ 0\ files\ \(roughly\ [0-9]*K\)\.$ ]]
 	[ "$status" -eq 124 ]
 
-	rm -rf "$fakeMd5sum"
+	rm -f "$fakeMd5sum"
 }
 @test "backcheck: md5sum run in parallel" {
 	local i=0
@@ -375,7 +375,7 @@ SCRIPT
 	[ "$status" -eq 0 ]
 	[ "${lines[0]}" == "...." ]
 
-	rm -rf "$fakeMd5sum" "$trackingFileSource" "$trackingFileBackup"
+	rm -f "$fakeMd5sum" "$trackingFileSource" "$trackingFileBackup"
 }
 @test "backcheck: backup md5sum failure" {
 	local i=0
@@ -410,7 +410,7 @@ SCRIPT
 	echo "$output" | grep -qF "Hashing '$backupDir/5' failed (blah blah IO error blah), aborting."
 	[ "$status" -eq 255 ]
 
-	rm -rf "$fakeMd5sum"
+	rm -f "$fakeMd5sum"
 }
 @test "backcheck: source md5sum failure" {
 	local i=0
@@ -447,6 +447,6 @@ SCRIPT
 	echo "$output" | grep -qF "Warning: Hashing '$sourceDir/5' failed (blah blah IO error blah), continuing."
 	[ "$status" -eq 0 ]
 
-	rm -rf "$fakeMd5sum"
+	rm -f "$fakeMd5sum"
 }
 

@@ -303,6 +303,7 @@ SCRIPT
 
 	rsync -a "$sourceDir"/ "$backupDir"
 
+	tmpTmp="$(mktemp -d)"
 	fakeMd5sum="$(mktemp)"
 	chmod +x "$fakeMd5sum"
 
@@ -315,16 +316,21 @@ SCRIPT
 	run bwrap \
 		--bind / / \
 		--dev /dev \
-		--bind /tmp /tmp \
+		--bind "$tmpTmp" /tmp \
+		--bind "$backupDir" "$backupDir" \
+		--bind "$sourceDir" "$sourceDir" \
 		--setenv PATH "/usr/local/bin:$PATH" \
 		--tmpfs "/usr/local/bin" \
 		--ro-bind "$fakeMd5sum" "/usr/local/bin/md5sum" \
 	timeout 0.5 "$BATS_TEST_DIRNAME"/backcheck "$backupDir" "$sourceDir"
 
+	# Make sure the named pipes have been removed
+	[ "$(find "$tmpTmp" -name 'backcheck-*')" == "" ]
 	[[ "$output" =~ Successfully\ processed\ 0\ files\ \(roughly\ [0-9]*K\)\.$ ]]
 	[ "$status" -eq 124 ]
 
 	rm -f "$fakeMd5sum"
+	rm -rf "$tmpTmp"
 }
 @test "backcheck: md5sum run in parallel" {
 	local i=0

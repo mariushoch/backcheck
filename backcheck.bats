@@ -59,7 +59,7 @@ function testBackcheck {
 	[ "$output" == "Source directory '/dafdfjhk' doesn't exist, aborting." ]
 	[ "$status" -eq 1 ]
 }
-@test "backcheck: Missmatch (different stat)" {
+@test "backcheck: Mismatch (different stat)" {
 	echo 2323 > "$sourceDir"/a-file
 	echo $RANDOM > "$sourceDir"/b-file
 	rsync -a "$sourceDir"/ "$backupDir"
@@ -73,7 +73,7 @@ function testBackcheck {
 	[[ "${lines[1]}" =~ ^Successfully\ processed\ 2\ files\ \(roughly\ [1-4][0-9]K\)\.$ ]]
 	[ "$status" -eq 0 ]
 }
-@test "backcheck --verbose: Missmatch (different stat)" {
+@test "backcheck --verbose: Mismatch (different stat)" {
 	echo 2323 > "$sourceDir"/a-file
 	echo 123 > "$sourceDir"/b-file
 	rsync -a "$sourceDir"/ "$backupDir"
@@ -136,7 +136,7 @@ SCRIPT
 	rm -f "$fakeFind"
 	rmdir "/tmp/rw-backupDir-$$" 2>/dev/null
 }
-@test "backcheck --debug: Missmatch (different stat)" {
+@test "backcheck --debug: Mismatch (different stat)" {
 	echo 2323 > "$sourceDir"/a-file
 	echo AAA > "$sourceDir"/b-file
 	rsync -a "$sourceDir"/ "$backupDir"
@@ -153,7 +153,7 @@ SCRIPT
 	[[ "${lines[5]}" =~ ^Successfully\ processed\ 2\ files\ \(roughly\ [1-4][0-9]K\)\.$ ]]
 	[ "$status" -eq 0 ]
 }
-@test "backcheck: Missmatch (matching stat)" {
+@test "backcheck: Mismatch (matching stat)" {
 	echo 2323 > "$sourceDir"/a-file
 	echo aa > "$sourceDir"/b-file
 	rsync -a "$sourceDir"/ "$backupDir"

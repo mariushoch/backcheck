@@ -156,6 +156,46 @@ function testBackcheck {
 	[[ "$output" =~ .*Checksum\ missmatch.*\(8f459eed987d0b1587842fda328ca098\).*\(e06c22e3fafeb40b9556bfd522e2c73a\),\ aborting\. ]]
 	[ "$status" -eq 255 ]
 }
+@test "backcheck: file changed while checking" {
+	local i=1
+	while [ "$i" -lt 11 ]; do
+			echo "$i" > "$sourceDir"/"$i"
+		i=$(((i + 1)))
+	done
+
+	rsync -a "$sourceDir"/ "$backupDir"
+
+	fakeMd5sum="$(mktemp)"
+	chmod +x "$fakeMd5sum"
+
+	cat > "$fakeMd5sum" <<SCRIPT
+#!/bin/bash
+if [ "\$1" == "$backupDir/5" ]; then
+	touch -d'2005-01-01 1:1:1' "/tmp/rw-sourceDir/5"
+	echo "00000000000000000000000000000000 /this/is/ignored"
+
+	exit 1
+fi
+echo "d41d8cd98f00b204e9800998ecf8427e /this/is/ignored"
+SCRIPT
+
+	run bwrap \
+		--bind / / \
+		--dev /dev \
+		--bind /tmp /tmp \
+		--bind "$sourceDir" /tmp/rw-sourceDir \
+		--setenv PATH "/usr/local/bin:$PATH" \
+		--tmpfs "/usr/local/bin" \
+		--ro-bind "$fakeMd5sum" "/usr/local/bin/md5sum" \
+	"$BATS_TEST_DIRNAME"/backcheck "$backupDir" "$sourceDir"
+
+	# Should contain 10 dots: 9 for the files and one in the final success message.
+	[ "$(echo "$output" | grep -oF '.' | wc -l)" -eq 10 ]
+	[ "$(echo "$output" | grep -oF '_' | wc -l)" -eq 1 ]
+	[ "$status" -eq 0 ]
+
+	rm -f "$fakeMd5sum"
+}
 @test "backcheck: Timeout" {
 	if ! command -v faketime >/dev/null 2>&1; then
 		skip "Needs faketime"

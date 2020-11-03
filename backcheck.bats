@@ -34,6 +34,13 @@ function testBackcheck {
 	[[ "$output" =~ Usage:\ backcheck ]]
 	[ "$status" -eq 0 ]
 }
+@test "backcheck: To few parameters" {
+	run "$BATS_TEST_DIRNAME"/backcheck /var/tmp
+
+	[[ "$output" =~ Backcheck\ [0-9]+\.[0-9]+\.[0-9]+ ]]
+	[[ "$output" =~ Usage:\ backcheck ]]
+	[ "$status" -eq 1 ]
+}
 @test "backcheck" {
 	testBackcheck
 }

@@ -40,6 +40,18 @@ function testBackcheck {
 @test "backcheck: Very high timeout" {
 	testBackcheck --timeout 12354
 }
+@test "backcheck: backup dir doesn't exist" {
+	run "$BATS_TEST_DIRNAME"/backcheck /ddladf /tmp
+
+	[ "$output" == "Backup directory '/ddladf' doesn't exist, aborting." ]
+	[ "$status" -eq 1 ]
+}
+@test "backcheck: source dir doesn't exist" {
+	run "$BATS_TEST_DIRNAME"/backcheck /tmp /dafdfjhk
+
+	[ "$output" == "Source directory '/dafdfjhk' doesn't exist, aborting." ]
+	[ "$status" -eq 1 ]
+}
 @test "backcheck: Missmatch (different stat)" {
 	echo 2323 > "$sourceDir"/a-file
 	echo $RANDOM > "$sourceDir"/b-file

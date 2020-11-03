@@ -35,7 +35,7 @@ fi
 if [ ! "$1" == "--postwrap" ] && [ -f "$0" ] && command -v bwrap >/dev/null 2>&1; then
 	backupPath="${*: -2:1}"
 	sourcePath="${*: -1}"
-	exec bwrap --dev-bind / / --ro-bind "$backupPath" "$backupPath" --ro-bind "$sourcePath" "$sourcePath" "$0" --postwrap "$@"
+	exec bwrap --dev-bind / / --ro-bind-try "$backupPath" "$backupPath" --ro-bind-try "$sourcePath" "$sourcePath" "$0" --postwrap "$@"
 elif [ "$1" == "--postwrap" ]; then
 	shift
 fi
@@ -44,6 +44,17 @@ timeout=-1
 if [ "$1" == "--timeout" ]; then
 	timeout="$2"
 	shift 2
+fi
+
+if [ ! -d "$1" ]; then
+	echo "Backup directory '$1' doesn't exist, aborting."
+
+	exit 1
+fi
+if [ ! -d "$2" ]; then
+	echo "Source directory '$2' doesn't exist, aborting."
+
+	exit 1
 fi
 
 # Derived from https://stackoverflow.com/a/23357277

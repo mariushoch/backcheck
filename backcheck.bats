@@ -66,6 +66,38 @@ function testBackcheck {
 	[[ "${lines[1]}" =~ ^Successfully\ processed\ 2\ files\ \(roughly\ [2-4][0-9]K\)\.$ ]]
 	[ "$status" -eq 0 ]
 }
+@test "backcheck --verbose: Missmatch (different stat)" {
+	echo 2323 > "$sourceDir"/a-file
+	echo $RANDOM > "$sourceDir"/b-file
+	rsync -a "$sourceDir"/ "$backupDir"
+
+	echo aa > "$backupDir"/b-file
+	# Make sure the modified time actually differs
+	touch -d'2005-01-01 1:1:1' "$backupDir"/b-file
+
+	run "$BATS_TEST_DIRNAME"/backcheck --verbose "$backupDir" "$sourceDir"
+	echo "$output" | grep -Fq "File modification time or size missmatch: '$backupDir/b-file' <> '$sourceDir/b-file'."
+	# The final message can be on either the third or fourth line.
+	[[ "${lines[2]}${lines[3]}" =~ Successfully\ processed\ 2\ files\ \(roughly\ [2-4][0-9]K\)\.$ ]]
+	[ "$status" -eq 0 ]
+}
+@test "backcheck --debug: Missmatch (different stat)" {
+	echo 2323 > "$sourceDir"/a-file
+	echo $RANDOM > "$sourceDir"/b-file
+	rsync -a "$sourceDir"/ "$backupDir"
+
+	echo aa > "$backupDir"/b-file
+	# Make sure the modified time actually differs
+	touch -d'2005-01-01 1:1:1' "$backupDir"/b-file
+
+	run "$BATS_TEST_DIRNAME"/backcheck --debug "$backupDir" "$sourceDir"
+	echo "$output" | grep -Fq "Checking '$backupDir/b-file' <> '$sourceDir/b-file'."
+	echo "$output" | grep -Fq "Checking '$backupDir/a-file' <> '$sourceDir/a-file'."
+	# --debug implies --verbose
+	echo "$output" | grep -Fq "File modification time or size missmatch: '$backupDir/b-file' <> '$sourceDir/b-file'."
+	[[ "${lines[5]}" =~ ^Successfully\ processed\ 2\ files\ \(roughly\ [2-4][0-9]K\)\.$ ]]
+	[ "$status" -eq 0 ]
+}
 @test "backcheck: Missmatch (matching stat)" {
 	echo 2323 > "$sourceDir"/a-file
 	echo aa > "$sourceDir"/b-file

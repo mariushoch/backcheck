@@ -115,14 +115,14 @@ function testBackcheck {
 #!/bin/bash
 /usr/bin/find "\$@"
 
-rm /tmp/rw-backupDir/b-file
+rm /tmp/rw-backupDir-$$/b-file
 SCRIPT
 
 	run bwrap \
 		--bind / / \
 		--dev /dev \
 		--bind /tmp /tmp \
-		--bind "$backupDir" /tmp/rw-backupDir \
+		--bind "$backupDir" /tmp/rw-backupDir-$$ \
 		--setenv PATH "/usr/local/bin:$PATH" \
 		--tmpfs "/usr/local/bin" \
 		--ro-bind "$fakeFind" "/usr/local/bin/find" \
@@ -134,6 +134,7 @@ SCRIPT
 	[ "$status" -eq 0 ]
 
 	rm -f "$fakeFind"
+	rmdir "/tmp/rw-backupDir-$$" 2>/dev/null
 }
 @test "backcheck --debug: Missmatch (different stat)" {
 	echo 2323 > "$sourceDir"/a-file
@@ -218,7 +219,7 @@ SCRIPT
 	cat > "$fakeMd5sum" <<SCRIPT
 #!/bin/bash
 if [ "\$1" == "$backupDir/5" ]; then
-	touch -d'2005-01-01 1:1:1' "/tmp/rw-sourceDir/5"
+	touch -d'2005-01-01 1:1:1' "/tmp/rw-sourceDir-$$/5"
 	echo "00000000000000000000000000000000 /this/is/ignored"
 
 	exit 1
@@ -230,7 +231,7 @@ SCRIPT
 		--bind / / \
 		--dev /dev \
 		--bind /tmp /tmp \
-		--bind "$sourceDir" /tmp/rw-sourceDir \
+		--bind "$sourceDir" /tmp/rw-sourceDir-$$ \
 		--setenv PATH "/usr/local/bin:$PATH" \
 		--tmpfs "/usr/local/bin" \
 		--ro-bind "$fakeMd5sum" "/usr/local/bin/md5sum" \
@@ -242,6 +243,7 @@ SCRIPT
 	[ "$status" -eq 0 ]
 
 	rm -f "$fakeMd5sum"
+	rmdir "/tmp/rw-sourceDir-$$" 2>/dev/null
 }
 @test "backcheck: Timeout" {
 	if ! command -v faketime >/dev/null 2>&1; then

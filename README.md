@@ -6,14 +6,16 @@ The most prominent use case for this is occasionally checking a backup, without 
 
 
 ```
-Backcheck 0.0.1
-Usage: backcheck [--timeout s] backup-path source-path
+Backcheck 1.2.0
+Usage: backcheck [--timeout s] [--verbose|--debug] backup-path source-path
 
 Check that the files in backup-path are readable and identical to the ones in source-path.
 This can be used to partially (with --timeout, checking a random selection of files) or 
 to fully test a backup (done by rsync -a or something similar).
 
         --timeout               Abort after checking files for at least this many seconds.
+        --verbose               More verbose output (shows details when a file is skipped).
+        --debug                 Very verbose output (shows details about all files processed).
 ```
 
 ### Notes

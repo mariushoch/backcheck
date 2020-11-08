@@ -121,6 +121,11 @@ verbose=0
 while [ $# -gt 2 ]; do
 	case "$1" in
 		--timeout)
+			if ! (($2 + 0)) 2>/dev/null; then
+				echo 'Invalid argument: Timeout must be an integer.'
+
+				exit 1
+			fi
 			timeout="$2"
 			shift 2
 		;;

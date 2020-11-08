@@ -76,6 +76,12 @@ function testBackcheck {
 	[[ "$output" = 'Invalid argument: Timeout must be an integer.' ]]
 	[ "$status" -eq 1 ]
 }
+@test "backcheck: Invalid argument" {
+	run "$BATS_TEST_DIRNAME"/backcheck --banana 2 /var/tmp /var/tmp
+
+	[[ "$output" = 'Unknown argument: --banana' ]]
+	[ "$status" -eq 1 ]
+}
 @test "backcheck: backup dir doesn't exist" {
 	run "$BATS_TEST_DIRNAME"/backcheck /ddladf /tmp
 

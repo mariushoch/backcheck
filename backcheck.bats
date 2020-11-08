@@ -12,12 +12,14 @@ teardown() {
 function testBackcheck {
 	echo 2323 > "$sourceDir"/a-file
 	echo $RANDOM > "$sourceDir"/b-file
-	touch -a -d'2015-01-01 1:1:1' "$backupDir"/b-file
 
 	rsync -a "$sourceDir"/ "$backupDir"
 	echo $RANDOM > "$sourceDir"/source-file-that-is-not-part-of-the-backup.txt
 	echo YAY > "$backupDir/a-backup-logfile-which-is-ignored.txt"
 
+	# Access b-file once more before touching it (I'm not sure why that's needed sometimes)
+	cat "$backupDir"/b-file >/dev/null
+	touch -a -d'2015-01-01 1:1:1' "$backupDir"/b-file
 	atimeBefore="$(stat --format=%X "$sourceDir/b-file")"
 	run "$BATS_TEST_DIRNAME"/backcheck "$@"
 	[ "${lines[0]}" == ".._" ] || [ "${lines[0]}" == "._." ] || [ "${lines[0]}" == "_.." ]

@@ -44,6 +44,23 @@ function testBackcheck {
 @test "backcheck" {
 	testBackcheck "$backupDir" "$sourceDir"
 }
+@test "backcheck: Wrapping works if backcheck is not executable" {
+	echo BLAH > "$sourceDir"/FILE
+	rsync -a "$sourceDir"/ "$backupDir"
+
+	tmpBackcheck="$(mktemp)"
+
+	cat "$BATS_TEST_DIRNAME"/backcheck > "$tmpBackcheck"
+	chmod -x "$tmpBackcheck"
+
+	run bash "$tmpBackcheck" "$backupDir" "$sourceDir"
+
+	[ "$status" -eq 0 ]
+	[ "${lines[0]}" == "." ]
+	[[ "${lines[1]}" =~ ^Successfully\ processed\ 1\ files\ \(roughly\ [1-4]?[0-9]K\)\.$ ]]
+
+	rm -f "$tmpBackcheck"
+}
 @test "backcheck: Very high timeout" {
 	testBackcheck --timeout 12354 "$backupDir" "$sourceDir"
 }

@@ -484,4 +484,19 @@ SCRIPT
 
 	rm -f "$fakeMd5sum"
 }
+@test "backcheck: mkfifo failure" {
+	touch "$backupDir"/a
 
+	# Use rm for mkfifo here: It will fail a) fail and b) output a nice message to stdout.
+	run bwrap \
+		--bind / / \
+		--dev /dev \
+		--bind /tmp /tmp \
+		--setenv PATH "/usr/local/bin:$PATH" \
+		--tmpfs "/usr/local/bin" \
+		--bind /usr/bin/rm /usr/local/bin/mkfifo \
+	"$BATS_TEST_DIRNAME"/backcheck "$backupDir" "$sourceDir"
+
+	[[ "$output" =~ ^Could\ not\ create\ named\ pipes\ /tmp/backcheck-[0-9]+-backup-sum\ /tmp/backcheck-[0-9]+-source-sum,\ aborting.$ ]]
+	[ "$status" -eq 1 ]
+}

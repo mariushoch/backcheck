@@ -12,6 +12,8 @@ teardown() {
 function testBackcheck {
 	echo 2323 > "$sourceDir"/a-file
 	echo $RANDOM > "$sourceDir"/b-file
+	touch -a -d'2015-01-01 1:1:1' "$backupDir"/b-file
+
 	rsync -a "$sourceDir"/ "$backupDir"
 	echo $RANDOM > "$sourceDir"/source-file-that-is-not-part-of-the-backup.txt
 	echo YAY > "$backupDir/a-backup-logfile-which-is-ignored.txt"

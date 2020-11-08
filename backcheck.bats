@@ -17,7 +17,7 @@ function testBackcheck {
 	echo YAY > "$backupDir/a-backup-logfile-which-is-ignored.txt"
 
 	atimeBefore="$(stat --format=%X "$sourceDir/b-file")"
-	run "$BATS_TEST_DIRNAME"/backcheck "$@" "$backupDir" "$sourceDir"
+	run "$BATS_TEST_DIRNAME"/backcheck "$@"
 	[ "${lines[0]}" == ".._" ] || [ "${lines[0]}" == "._." ] || [ "${lines[0]}" == "_.." ]
 	[[ "${lines[1]}" =~ ^Successfully\ processed\ 3\ files\ \(roughly\ [2-6][0-9]K\)\.$ ]]
 	[ "$(echo "$output" | wc -l)" -eq 2 ]
@@ -42,10 +42,16 @@ function testBackcheck {
 	[ "$status" -eq 1 ]
 }
 @test "backcheck" {
-	testBackcheck
+	testBackcheck "$backupDir" "$sourceDir"
 }
 @test "backcheck: Very high timeout" {
-	testBackcheck --timeout 12354
+	testBackcheck --timeout 12354 "$backupDir" "$sourceDir"
+}
+@test "backcheck: Only backup dir given with trailing slash" {
+	testBackcheck --timeout 12354 "$backupDir/" "$sourceDir"
+}
+@test "backcheck: Only source dir given with trailing slash" {
+	testBackcheck --timeout 12354 "$backupDir/" "$sourceDir"
 }
 @test "backcheck: backup dir doesn't exist" {
 	run "$BATS_TEST_DIRNAME"/backcheck /ddladf /tmp

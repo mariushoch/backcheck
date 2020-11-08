@@ -68,7 +68,7 @@ function testBackcheck {
 	testBackcheck --timeout 12354 "$backupDir/" "$sourceDir"
 }
 @test "backcheck: Only source dir given with trailing slash" {
-	testBackcheck --timeout 12354 "$backupDir/" "$sourceDir"
+	testBackcheck --timeout 12354 "$backupDir" "$sourceDir/"
 }
 @test "backcheck: Invalid timeout" {
 	run "$BATS_TEST_DIRNAME"/backcheck --timeout 1a /var/tmp /var/tmp

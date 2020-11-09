@@ -108,7 +108,7 @@ fi
 
 # If possible, call ourselves in bwrap with the source and backup paths read only again
 # that way we can ensure to not alter the file's atime.
-if [ ! "$1" == "--postwrap" ] && [ -f "$0" ] && command -v bwrap >/dev/null 2>&1; then
+if [ ! "$1" == "--postwrap" ] && [ -f "$0" ] && bwrap --ro-bind / / true 2>/dev/null; then
 	exec bwrap --dev-bind / / --ro-bind "$backupPath" "$backupPath" --ro-bind "$sourcePath" "$sourcePath" /bin/bash "$0" --postwrap "$@"
 elif [ "$1" == "--postwrap" ]; then
 	shift

@@ -17,18 +17,23 @@ function testBackcheck {
 	echo $RANDOM > "$sourceDir"/source-file-that-is-not-part-of-the-backup.txt
 	echo YAY > "$backupDir/a-backup-logfile-which-is-ignored.txt"
 
-	# Access b-file once more before touching it (I'm not sure why that's needed sometimes)
-	cat "$backupDir"/b-file >/dev/null
-	touch -a -d'2015-01-01 1:1:1' "$backupDir"/b-file
-	atimeBefore="$(stat --format=%X "$sourceDir/b-file")"
 	run "$BATS_TEST_DIRNAME"/backcheck "$@"
 	[ "${lines[0]}" == ".._" ] || [ "${lines[0]}" == "._." ] || [ "${lines[0]}" == "_.." ]
 	[[ "${lines[1]}" =~ ^Successfully\ processed\ 3\ files\ \(roughly\ [2-6][0-9]K\)\.$ ]]
 	[ "$(echo "$output" | wc -l)" -eq 2 ]
-	# Make sure that backcheck doesn't change a file's atime
-	[ "$(stat --format=%X "$sourceDir/b-file")" -eq "$atimeBefore" ]
 
 	[ "$status" -eq 0 ]
+}
+function testAtime {
+	echo $RANDOM > "$sourceDir"/b-file
+
+	rsync -a "$sourceDir"/ "$backupDir"
+	atimeBefore="$(stat --format=%x "$sourceDir/b-file")"
+
+	"$BATS_TEST_DIRNAME"/backcheck "$backupDir" "$sourceDir" >/dev/null 2>&1
+	# Make sure that backcheck doesn't change a file's atime
+	[ "$(stat --format=%x "$sourceDir/b-file")" == "$atimeBefore" ] && return 0
+	return 1
 }
 
 @test "backcheck --help" {
@@ -73,6 +78,28 @@ function testBackcheck {
 }
 @test "backcheck: Only source dir given with trailing slash" {
 	testBackcheck --timeout 12354 "$backupDir" "$sourceDir/"
+}
+@test "backcheck: Make sure that backcheck doesn't change a file's atime" {
+	# This test is a little unstable, thus passing one out of three is ok,
+	# as for unknown reasons atime sometimes changes shortly after file creation!
+	status=-1
+	if testAtime; then
+		status=0
+	fi
+
+	if [ "$status" -ne 0 ]; then
+		sleep 0.5
+		if testAtime; then
+			status=0
+		fi
+	fi
+	if [ "$status" -ne 0 ]; then
+		sleep 5
+		if testAtime; then
+			status=0
+		fi
+	fi
+	[ "$status" -eq 0 ]
 }
 @test "backcheck: Invalid timeout" {
 	run "$BATS_TEST_DIRNAME"/backcheck --timeout 1a /var/tmp /var/tmp

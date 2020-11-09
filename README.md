@@ -6,7 +6,7 @@ The most prominent use case for this is occasionally checking a backup, without 
 
 
 ```
-Backcheck 1.2.0
+Backcheck 1.2.2
 Usage: backcheck [--timeout s] [--verbose|--debug] backup-path source-path
 
 Check that the files in backup-path are readable and identical to the ones in source-path.

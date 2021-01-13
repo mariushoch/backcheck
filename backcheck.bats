@@ -355,7 +355,7 @@ SCRIPT
 	faketime -f '+0y,x250' "$BATS_TEST_DIRNAME"/backcheck --timeout 250 "$backupDir" "$sourceDir"
 
 	[ "${lines[0]}" == "..." ]
-	[[ "${lines[1]}" =~ ^Timeout\ reached,\ successfully\ processed\ 3\ files\ \(roughly\ 1[0-9]{2}K\)\.$ ]]
+	[[ "${lines[1]}" =~ ^Timeout\ reached,\ successfully\ processed\ 3\ files\ \(roughly\ (1[0-9]|[7-9])[0-9]K\)\.$ ]]
 	[ "$status" -eq 0 ]
 
 	rm -f "$fakeMd5sum"

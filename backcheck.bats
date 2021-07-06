@@ -19,7 +19,7 @@ function testBackcheck {
 
 	run "$BATS_TEST_DIRNAME"/backcheck "$@"
 	[ "${lines[0]}" == ".._" ] || [ "${lines[0]}" == "._." ] || [ "${lines[0]}" == "_.." ]
-	[[ "${lines[1]}" =~ ^Successfully\ processed\ 3\ files\ \(roughly\ [2-6][0-9]K\)\.$ ]]
+	[[ "${lines[1]}" =~ ^Successfully\ processed\ 3\ files\ \(roughly\ 1?[0-9][0-9]K\)\.$ ]]
 	[ "$(echo "$output" | wc -l)" -eq 2 ]
 
 	[ "$status" -eq 0 ]
@@ -204,10 +204,9 @@ SCRIPT
 		--tmpfs "/usr/local/bin" \
 		--ro-bind "$fakeFind" "/usr/local/bin/find" \
 	"$BATS_TEST_DIRNAME"/backcheck --verbose "$backupDir" "$sourceDir"
-
 	echo "$output" | grep -Fq "File does not exist: '$backupDir/b-file'."
 	# The final message can be on either the third or fourth line.
-	[[ "${lines[2]}${lines[3]}" =~ Successfully\ processed\ 2\ files\ \(roughly\ [1-4][0-9]K\)\.$ ]]
+	[[ "${lines[2]}${lines[3]}" =~ Successfully\ processed\ 2\ files\ \(roughly\ [1-8][0-9]K\)\.$ ]]
 	[ "$status" -eq 0 ]
 
 	rm -f "$fakeFind"
@@ -257,7 +256,7 @@ SCRIPT
 
 	run "$BATS_TEST_DIRNAME"/backcheck "$backupDir" "$sourceDir"
 	[ "${lines[0]}" == "..." ]
-	[[ "${lines[1]}" =~ ^Successfully\ processed\ 3\ files\ \(roughly\ [2-6][0-9]K\)\.$ ]]
+	[[ "${lines[1]}" =~ ^Successfully\ processed\ 3\ files\ \(roughly\ 1?[2-9][0-9]K\)\.$ ]]
 	[ "$status" -eq 0 ]
 }
 @test "backcheck: Strange file names (mismatch)" {

@@ -87,7 +87,8 @@ if [ "$1" == "--help" ]; then
 	exit 0
 fi
 if [ $# -lt 2 ]; then
-	usage
+	echo "$(basename "$0"): missing operands"
+	echo "Try '$(basename "$0") --help' for more information."
 
 	exit 1
 fi

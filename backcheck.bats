@@ -43,11 +43,10 @@ function testAtime {
 	[[ "$output" =~ Usage:\ backcheck ]]
 	[ "$status" -eq 0 ]
 }
-@test "backcheck: To few parameters" {
+@test "backcheck: Too few parameters" {
 	run "$BATS_TEST_DIRNAME"/backcheck /var/tmp
 
-	[[ "$output" =~ Backcheck\ [0-9]+\.[0-9]+\.[0-9]+ ]]
-	[[ "$output" =~ Usage:\ backcheck ]]
+	[[ "$output" == "backcheck: missing operands"$'\n'"Try 'backcheck --help' for more information." ]]
 	[ "$status" -eq 1 ]
 }
 @test "backcheck" {

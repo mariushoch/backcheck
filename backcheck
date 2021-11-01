@@ -69,7 +69,7 @@ function statMatch {
 }
 
 function usage {
-	echo "Backcheck 1.2.2"
+	echo "Backcheck 1.2.3-PRE"
 	echo "Usage: backcheck [--timeout s] [--verbose|--debug] backup-path source-path"
 	echo
 	echo "Check that the files in backup-path are readable and identical to the ones in source-path."
@@ -109,6 +109,10 @@ fi
 # If possible, call ourselves in bwrap with the source and backup paths read only again
 # that way we can ensure to not alter the file's atime.
 if [ ! "$1" == "--postwrap" ] && [ -f "$0" ] && bwrap --ro-bind / / true 2>/dev/null; then
+	# Use absolute paths here, as bwrap doesn't understand relative paths
+	backupPath="$(realpath "$backupPath")"
+	sourcePath="$(realpath "$sourcePath")"
+
 	exec bwrap --dev-bind / / --ro-bind "$backupPath" "$backupPath" --ro-bind "$sourcePath" "$sourcePath" /bin/bash "$0" --postwrap "$@"
 elif [ "$1" == "--postwrap" ]; then
 	shift

@@ -536,3 +536,25 @@ SCRIPT
 	[[ "$output" =~ ^Could\ not\ create\ named\ pipes\ /tmp/backcheck-[0-9]+-backup-sum\ /tmp/backcheck-[0-9]+-source-sum,\ aborting.$ ]]
 	[ "$status" -eq 1 ]
 }
+@test "backcheck: Relative backup path" {
+	echo 'AHA' > "$sourceDir"/a-file
+	rsync -a "$sourceDir"/ "$backupDir"
+
+	cd "$(dirname "$backupDir")"
+	run "$BATS_TEST_DIRNAME"/backcheck "$(basename "$backupDir")" "$sourceDir"
+
+	[ "${lines[0]}" == "." ]
+	[[ "${lines[1]}" =~ ^Successfully\ processed\ 1\ files\ \(roughly\ [1-8]?[0-9]K\)\.$ ]]
+	[ "$status" -eq 0 ]
+}
+@test "backcheck: Relative source path" {
+	echo 'AHA' > "$sourceDir"/a-file
+	rsync -a "$sourceDir"/ "$backupDir"
+
+	cd "$(dirname "$sourceDir")"
+	run "$BATS_TEST_DIRNAME"/backcheck "$backupDir" "$(basename "$sourceDir")"
+
+	[ "${lines[0]}" == "." ]
+	[[ "${lines[1]}" =~ ^Successfully\ processed\ 1\ files\ \(roughly\ [1-8]?[0-9]K\)\.$ ]]
+	[ "$status" -eq 0 ]
+}

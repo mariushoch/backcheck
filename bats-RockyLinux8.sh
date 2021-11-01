@@ -7,7 +7,7 @@ if ! command -v podman >/dev/null 2>&1; then
 fi
 
 cd "$(dirname "$0")" || exit 255
-$RUNTIME build --tag backcheck-rockylinux-8 -f Dockerfile .
+$RUNTIME build --tag backcheck-rockylinux-8 -f Dockerfile-RockyLinux8 .
 cd - || exit 255
 
 echo

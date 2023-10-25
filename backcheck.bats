@@ -292,7 +292,7 @@ SCRIPT
 	local i=1
 	while [ "$i" -lt 11 ]; do
 			echo "$i" > "$sourceDir"/"$i"
-		i=$(((i + 1)))
+		i=$((i + 1))
 	done
 
 	rsync -a "$sourceDir"/ "$backupDir"
@@ -337,7 +337,7 @@ SCRIPT
 	local i=0
 	while [ "$i" -lt 11 ]; do
 			echo "$i" > "$sourceDir"/"$i"
-		i=$(((i + 1)))
+		i=$((i + 1))
 	done
 
 	rsync -a "$sourceDir"/ "$backupDir"
@@ -371,7 +371,7 @@ SCRIPT
 	local i=0
 	while [ "$i" -lt 3 ]; do
 			echo "$i" > "$sourceDir"/"$i"
-		i=$(((i + 1)))
+		i=$((i + 1))
 	done
 
 	rsync -a "$sourceDir"/ "$backupDir"
@@ -409,7 +409,7 @@ SCRIPT
 	local i=0
 	while [ "$i" -lt 4 ]; do
 			echo "$i" > "$sourceDir"/"$i"
-		i=$(((i + 1)))
+		i=$((i + 1))
 	done
 
 	rsync -a "$sourceDir"/ "$backupDir"
@@ -460,7 +460,7 @@ SCRIPT
 	local i=0
 	while [ "$i" -lt 11 ]; do
 			echo "$i" > "$sourceDir"/"$i"
-		i=$(((i + 1)))
+		i=$((i + 1))
 	done
 
 	rsync -a "$sourceDir"/ "$backupDir"
@@ -495,7 +495,7 @@ SCRIPT
 	local i=0
 	while [ "$i" -lt 11 ]; do
 			echo "$i" > "$sourceDir"/"$i"
-		i=$(((i + 1)))
+		i=$((i + 1))
 	done
 
 	rsync -a "$sourceDir"/ "$backupDir"

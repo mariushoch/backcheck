@@ -167,7 +167,7 @@ fi
 processed=0
 # Note: Once we drop bash 4 support, switch to EPOCHSECONDS here (and below)
 startTime="$(date +"%s")"
-endTime=$(((startTime + timeout)))
+endTime=$((startTime + timeout))
 
 if ! mkfifo --mode=600 /tmp/backcheck-$$-backup-sum /tmp/backcheck-$$-source-sum 2>/dev/null; then
 	echo "Could not create named pipes /tmp/backcheck-$$-backup-sum /tmp/backcheck-$$-source-sum, aborting."
@@ -175,7 +175,7 @@ if ! mkfifo --mode=600 /tmp/backcheck-$$-backup-sum /tmp/backcheck-$$-source-sum
 	exit 1
 fi
 
-checkOrder="$(shuf -i 0-$(((backupFilesCount - 1))))"
+checkOrder="$(shuf -i 0-$((backupFilesCount - 1)))"
 
 # Get this as late as possible
 rcharBefore="$(grep -oP '(?<=rchar: ).*' /proc/$$/io)"

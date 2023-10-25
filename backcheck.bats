@@ -7,6 +7,13 @@ setup() {
 }
 teardown() {
 	rm -rf "$backupDir" "$sourceDir"
+
+	# Print last output from bats' run
+	# bats will not output anything, if the test succeeded.
+	if [ -n "$output" ]; then
+		echo "Last \$output:"
+		echo "$output"
+	fi
 }
 
 function testBackcheck {

@@ -94,6 +94,7 @@ if [ $# -lt 2 ]; then
 fi
 
 backupPath="$(dirname "${*: -2:1}/.")"
+backupPathLength="${#backupPath}"
 sourcePath="$(dirname "${*: -1}/.")"
 
 if [ ! -d "$backupPath" ]; then
@@ -185,7 +186,7 @@ for i in $(shuf -i 0-$(((backupFilesCount - 1)))); do
 	(( processed++ ))
 
 	backupFile="${backupFiles[$i]}"
-	sourceFile="${backupFile/"$backupPath"/$sourcePath}"
+	sourceFile="$sourcePath${backupFile:$backupPathLength}"
 	if [ $debug -gt 0 ]; then
 		echo -e "\nChecking '$backupFile' <> '$sourceFile'."
 	fi

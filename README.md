@@ -6,7 +6,7 @@ The most prominent use case for this is occasionally checking a backup, without 
 
 
 ```
-Backcheck 1.2.3
+Backcheck 1.2.4
 Usage: backcheck [--timeout s] [--verbose|--debug] backup-path source-path
 
 Check that the files in backup-path are readable and identical to the ones in source-path.
@@ -24,3 +24,12 @@ to fully test a backup (done by rsync -a or something similar).
 
 #### Why skip if the file size and modified time matches (and not error)?
 To avoid failures for slightly stale backups and because in these cases `rsync` (and similar tools) would also detect the differences easily.
+
+## Changelog
+### 1.2.4 (2023-10-25)
+* Made the file path handling more robust
+* Made the size estimates a little less inaccurate
+
+### 1.2.3 (2021-11-01)
+* Fixed handling relative source or target dir
+* Nicer error message when missing source or backup dir

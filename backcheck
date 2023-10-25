@@ -69,7 +69,7 @@ function statMatch {
 }
 
 function usage {
-	echo "Backcheck 1.2.3"
+	echo "Backcheck 1.2.4"
 	echo "Usage: backcheck [--timeout s] [--verbose|--debug] backup-path source-path"
 	echo
 	echo "Check that the files in backup-path are readable and identical to the ones in source-path."

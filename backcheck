@@ -169,15 +169,18 @@ processed=0
 startTime="$(date +"%s")"
 endTime=$(((startTime + timeout)))
 
-rcharBefore="$(grep -oP '(?<=rchar: ).*' /proc/$$/io)"
-
 if ! mkfifo --mode=600 /tmp/backcheck-$$-backup-sum /tmp/backcheck-$$-source-sum 2>/dev/null; then
 	echo "Could not create named pipes /tmp/backcheck-$$-backup-sum /tmp/backcheck-$$-source-sum, aborting."
 
 	exit 1
 fi
 
-for i in $(shuf -i 0-$(((backupFilesCount - 1)))); do
+checkOrder="$(shuf -i 0-$(((backupFilesCount - 1))))"
+
+# Get this as late as possible
+rcharBefore="$(grep -oP '(?<=rchar: ).*' /proc/$$/io)"
+
+for i in $checkOrder; do
 	if [ "$timeout" -gt 0 ]; then
 		if [ "$endTime" -lt "$(date +"%s")" ]; then
 			break

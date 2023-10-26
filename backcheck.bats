@@ -1,8 +1,6 @@
 #!/usr/bin/env bats
 # shellcheck disable=SC2030 disable=SC2031
 
-lessThan500K='([1-5]?[0-9][0-9]|[0-9]\.[0-9])K'
-
 setup() {
 	backupDir="$(mktemp -d)"
 	sourceDir="$(mktemp -d)"
@@ -17,6 +15,9 @@ teardown() {
 		echo "$output"
 	fi
 }
+fileSizeSum() {
+	du -bc "$@" | tail -n1 | grep -oP '^[0-9]+'
+}
 
 function testBackcheck {
 	echo 2323 > "$sourceDir"/a-file
@@ -28,7 +29,9 @@ function testBackcheck {
 
 	run "$BATS_TEST_DIRNAME"/backcheck "$@"
 	[ "${lines[0]}" == ".._" ] || [ "${lines[0]}" == "._." ] || [ "${lines[0]}" == "_.." ]
-	[[ "${lines[1]}" =~ ^Successfully\ processed\ 3\ files\ \(roughly\ $lessThan500K\)\.$ ]]
+	local expectedFileSize
+	expectedFileSize="$(fileSizeSum "$sourceDir"/a-file "$sourceDir"/b-file)"
+	[[ "${lines[1]}" =~ ^Successfully\ processed\ 3\ files\ \(${expectedFileSize}B\)\.$ ]]
 	[ "$(echo "$output" | wc -l)" -eq 2 ]
 
 	[ "$status" -eq 0 ]
@@ -74,7 +77,9 @@ function testAtime {
 
 	[ "$status" -eq 0 ]
 	[ "${lines[0]}" == "." ]
-	[[ "${lines[1]}" =~ ^Successfully\ processed\ 1\ files\ \(roughly\ $lessThan500K\)\.$ ]]
+	local expectedFileSize
+	expectedFileSize="$(fileSizeSum "$sourceDir"/FILE)"
+	[[ "${lines[1]}" =~ ^Successfully\ processed\ 1\ files\ \(${expectedFileSize}B\)\.$ ]]
 
 	rm -f "$tmpBackcheck"
 }
@@ -141,7 +146,7 @@ function testAtime {
 	run "$BATS_TEST_DIRNAME"/backcheck "$backupDir" "$sourceDir"
 
 	[ "${lines[0]}" == "." ]
-	[[ "${lines[1]}" =~ ^Successfully\ processed\ 1\ files\ \(roughly\ 5(\.[0-5])?M\)\.$ ]]
+	[[ "${lines[1]}" =~ ^Successfully\ processed\ 1\ files\ \(5\.0MiB\)\.$ ]]
 	[ "$status" -eq 0 ]
 }
 @test "backcheck: Mismatch (different stat)" {
@@ -155,7 +160,9 @@ function testAtime {
 
 	run "$BATS_TEST_DIRNAME"/backcheck "$backupDir" "$sourceDir"
 	[ "${lines[0]}" == "._" ] || [ "${lines[0]}" == '_.' ]
-	[[ "${lines[1]}" =~ ^Successfully\ processed\ 2\ files\ \(roughly\ $lessThan500K\)\.$ ]]
+	local expectedFileSize
+	expectedFileSize="$(fileSizeSum "$sourceDir"/a-file)"
+	[[ "${lines[1]}" =~ ^Successfully\ processed\ 2\ files\ \(${expectedFileSize}B\)\.$ ]]
 	[ "$status" -eq 0 ]
 }
 @test "backcheck --verbose: Mismatch (different stat)" {
@@ -171,7 +178,9 @@ function testAtime {
 
 	echo "$output" | grep -Fq "File size mismatch: '$backupDir/b-file' <> '$sourceDir/b-file'."
 	# The final message can be on either the third or fourth line.
-	[[ "${lines[2]}${lines[3]}" =~ Successfully\ processed\ 2\ files\ \(roughly\ $lessThan500K\)\.$ ]]
+	local expectedFileSize
+	expectedFileSize="$(fileSizeSum "$sourceDir"/a-file)"
+	[[ "${lines[2]}${lines[3]}" =~ Successfully\ processed\ 2\ files\ \(${expectedFileSize}B\)\.$ ]]
 	[ "$status" -eq 0 ]
 }
 @test "backcheck --verbose: Source file does not exist" {
@@ -185,7 +194,9 @@ function testAtime {
 
 	echo "$output" | grep -Fq "File does not exist: '$sourceDir/b-file'."
 	# The final message can be on either the third or fourth line.
-	[[ "${lines[2]}${lines[3]}" =~ Successfully\ processed\ 2\ files\ \(roughly\ $lessThan500K\)\.$ ]]
+	local expectedFileSize
+	expectedFileSize="$(fileSizeSum "$sourceDir"/a-file)"
+	[[ "${lines[2]}${lines[3]}" =~ Successfully\ processed\ 2\ files\ \(${expectedFileSize}B\)\.$ ]]
 	[ "$status" -eq 0 ]
 }
 @test "backcheck --verbose: Backup file does no longer exist" {
@@ -214,7 +225,9 @@ SCRIPT
 	"$BATS_TEST_DIRNAME"/backcheck --verbose "$backupDir" "$sourceDir"
 	echo "$output" | grep -Fq "File does not exist: '$backupDir/b-file'."
 	# The final message can be on either the third or fourth line.
-	[[ "${lines[2]}${lines[3]}" =~ Successfully\ processed\ 2\ files\ \(roughly\ $lessThan500K\)\.$ ]]
+	local expectedFileSize
+	expectedFileSize="$(fileSizeSum "$sourceDir"/a-file)"
+	[[ "${lines[2]}${lines[3]}" =~ Successfully\ processed\ 2\ files\ \(${expectedFileSize}B\)\.$ ]]
 	[ "$status" -eq 0 ]
 
 	rm -f "$fakeFind"
@@ -234,7 +247,9 @@ SCRIPT
 	echo "$output" | grep -Fq "Checking '$backupDir/a-file' <> '$sourceDir/a-file'."
 	# --debug implies --verbose
 	echo "$output" | grep -Fq "File modification time mismatch: '$backupDir/b-file' <> '$sourceDir/b-file'."
-	[[ "${lines[5]}" =~ ^Successfully\ processed\ 2\ files\ \(roughly\ $lessThan500K\)\.$ ]]
+	local expectedFileSize
+	expectedFileSize="$(fileSizeSum "$sourceDir"/a-file)"
+	[[ "${lines[5]}" =~ ^Successfully\ processed\ 2\ files\ \(${expectedFileSize}B\)\.$ ]]
 	[ "$status" -eq 0 ]
 }
 @test "backcheck: Mismatch (matching stat)" {
@@ -264,7 +279,9 @@ SCRIPT
 
 	run "$BATS_TEST_DIRNAME"/backcheck "$backupDir" "$sourceDir"
 	[ "${lines[0]}" == "..." ]
-	[[ "${lines[1]}" =~ ^Successfully\ processed\ 3\ files\ \(roughly\ $lessThan500K\)\.$ ]]
+	local expectedFileSize
+	expectedFileSize="$(fileSizeSum "$sourceDir"/a-file "$sourceDir"/b-file "$sourceDir/((((((.[[[5656öüß??d")"
+	[[ "${lines[1]}" =~ ^Successfully\ processed\ 3\ files\ \(${expectedFileSize}B\)\.$ ]]
 	[ "$status" -eq 0 ]
 }
 @test "backcheck: Strange file names (mismatch)" {
@@ -362,7 +379,7 @@ SCRIPT
 	faketime -f '+0y,x250' "$BATS_TEST_DIRNAME"/backcheck --timeout 250 "$backupDir" "$sourceDir"
 
 	[ "${lines[0]}" == "..." ]
-	[[ "${lines[1]}" =~ ^Timeout\ reached,\ successfully\ processed\ 3\ files\ \(roughly\ $lessThan500K\)\.$ ]]
+	[[ "${lines[1]}" =~ ^Timeout\ reached,\ successfully\ processed\ 3\ files\ \([0-9]{1,2}B\)\.$ ]]
 	[ "$status" -eq 0 ]
 
 	rm -f "$fakeMd5sum"
@@ -399,7 +416,7 @@ SCRIPT
 
 	# Make sure the named pipes have been removed
 	[ "$(find "$tmpTmp" -name 'backcheck-*')" == "" ]
-	[[ "$output" =~ Successfully\ processed\ 0\ files\ \(roughly\ $lessThan500K\)\.$ ]]
+	[[ "$output" =~ Successfully\ processed\ 0\ files\ \(0B\)\.$ ]]
 	[ "$status" -eq 124 ]
 
 	rm -f "$fakeMd5sum"
@@ -552,7 +569,9 @@ SCRIPT
 	run "$BATS_TEST_DIRNAME"/backcheck "$(basename "$backupDir")" "$sourceDir"
 
 	[ "${lines[0]}" == "." ]
-	[[ "${lines[1]}" =~ ^Successfully\ processed\ 1\ files\ \(roughly\ $lessThan500K\)\.$ ]]
+	local expectedFileSize
+	expectedFileSize="$(fileSizeSum "$sourceDir"/a-file)"
+	[[ "${lines[1]}" =~ ^Successfully\ processed\ 1\ files\ \(${expectedFileSize}B\)\.$ ]]
 	[ "$status" -eq 0 ]
 }
 @test "backcheck: Relative source path" {
@@ -563,6 +582,8 @@ SCRIPT
 	run "$BATS_TEST_DIRNAME"/backcheck "$backupDir" "$(basename "$sourceDir")"
 
 	[ "${lines[0]}" == "." ]
-	[[ "${lines[1]}" =~ ^Successfully\ processed\ 1\ files\ \(roughly\ $lessThan500K\)\.$ ]]
+	local expectedFileSize
+	expectedFileSize="$(fileSizeSum "$sourceDir"/a-file)"
+	[[ "${lines[1]}" =~ ^Successfully\ processed\ 1\ files\ \(${expectedFileSize}B\)\.$ ]]
 	[ "$status" -eq 0 ]
 }

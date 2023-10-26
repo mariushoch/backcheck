@@ -6,7 +6,7 @@ The most prominent use case for this is occasionally checking a backup, without 
 
 
 ```
-Backcheck 1.2.4
+Backcheck 1.3.0
 Usage: backcheck [--timeout s] [--verbose|--debug] backup-path source-path
 
 Check that the files in backup-path are readable and identical to the ones in source-path.
@@ -26,6 +26,10 @@ to fully test a backup (done by rsync -a or something similar).
 To avoid failures for slightly stale backups and because in these cases `rsync` (and similar tools) would also detect the differences easily.
 
 ## Changelog
+### 1.3.0 (2023-10-26)
+* Calculate the exact size of the files tested instead of relying on `rchar`.
+* Improve performance especially for small files, by running stat only after md5sum is already running
+
 ### 1.2.4 (2023-10-25)
 * Made the file path handling more robust
 * Made the size estimates a little less inaccurate

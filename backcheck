@@ -188,6 +188,14 @@ for i in $(shuf -i 0-$((backupFilesCount - 1))); do
 
 	backupFile="${backupFiles[$i]}"
 	sourceFile="$sourcePath${backupFile:$backupPathLength}"
+	if [ $debug -gt 0 ]; then
+		echo -e "\nChecking '$backupFile' <> '$sourceFile'."
+	fi
+
+	if ! statMatch "$backupFile" "$sourceFile"; then
+		echo -n '_'
+		continue
+	fi
 
 	# We need to use command substitution here in order for the md5sums to start in parallel
 	# (before we're trying to read from the named pipes).
@@ -195,23 +203,6 @@ for i in $(shuf -i 0-$((backupFilesCount - 1))); do
 	echo "$(md5sum "$backupFile" 2>&1)" > /tmp/backcheck-$$-backup-sum &
 	# shellcheck disable=2005
 	echo "$(md5sum "$sourceFile" 2>&1)" > /tmp/backcheck-$$-source-sum &
-
-	if [ $debug -gt 0 ]; then
-		echo -e "\nChecking '$backupFile' <> '$sourceFile'."
-	fi
-
-	if ! statMatch "$backupFile" "$sourceFile"; then
-		# shellcheck disable=SC2046
-		kill $(jobs -p) 2>/dev/null
-		# Drain the pipes, per https://unix.stackexchange.com/a/522881
-		# shellcheck disable=SC2094
-		cat 0<> "/tmp/backcheck-$$-backup-sum" <"/tmp/backcheck-$$-backup-sum" >/dev/null
-		# shellcheck disable=SC2094
-		cat 0<> "/tmp/backcheck-$$-source-sum" <"/tmp/backcheck-$$-source-sum" >/dev/null
-		echo -n '_'
-		continue
-	fi
-
 	backupFileSum="$(</tmp/backcheck-$$-backup-sum)"
 	sourceFileSum="$(</tmp/backcheck-$$-source-sum)"
 	sizeChecked=$((sizeChecked + fileSize))

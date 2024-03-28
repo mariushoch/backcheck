@@ -197,10 +197,12 @@ for i in $(shuf -i 0-$((backupFilesCount - 1))); do
 		continue
 	fi
 
-	# We need to pipe to cat here in order for the md5sums to start right away (not waiting for a fifo reader)
-	md5sum "$backupFile" 2>&1 | cat > /tmp/backcheck-$$-backup-sum &
-	md5sum "$sourceFile" 2>&1 | cat > /tmp/backcheck-$$-source-sum &
-
+	# We need to use command substitution here in order for the md5sums to start in parallel
+	# (before we're trying to read from the named pipes).
+	# shellcheck disable=2005
+	echo "$(md5sum "$backupFile" 2>&1)" > /tmp/backcheck-$$-backup-sum &
+	# shellcheck disable=2005
+	echo "$(md5sum "$sourceFile" 2>&1)" > /tmp/backcheck-$$-source-sum &
 	backupFileSum="$(</tmp/backcheck-$$-backup-sum)"
 	sourceFileSum="$(</tmp/backcheck-$$-source-sum)"
 	sizeChecked=$((sizeChecked + fileSize))

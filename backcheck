@@ -113,12 +113,14 @@ fi
 
 # If possible, call ourselves in bwrap with the source and backup paths read only again
 # that way we can ensure to not alter the file's atime.
-if [ ! "$1" == "--postwrap" ] && [ -f "$0" ] && bwrap --ro-bind / / true 2>/dev/null; then
-	# Use absolute paths here, as bwrap doesn't understand relative paths
-	backupPath="$(realpath "$backupPath")"
-	sourcePath="$(realpath "$sourcePath")"
+backupPathFull="$(realpath "$backupPath")"
+sourcePathFull="$(realpath "$sourcePath")"
 
-	exec bwrap --dev-bind / / --ro-bind "$backupPath" "$backupPath" --ro-bind "$sourcePath" "$sourcePath" /bin/bash "$0" --postwrap "$@"
+if [ ! "$1" == "--postwrap" ] && [ -f "$0" ]; then
+	# Use absolute paths here, as bwrap doesn't understand relative paths
+	if bwrap --dev-bind / / --ro-bind "$backupPathFull" "$backupPathFull" --ro-bind "$sourcePathFull" "$sourcePathFull" /bin/true >/dev/null 2>&1; then
+		exec bwrap --dev-bind / / --ro-bind "$backupPathFull" "$backupPathFull" --ro-bind "$sourcePathFull" "$sourcePathFull" /bin/bash "$0" --postwrap "$@"
+	fi
 elif [ "$1" == "--postwrap" ]; then
 	shift
 fi

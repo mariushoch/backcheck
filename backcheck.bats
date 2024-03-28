@@ -587,3 +587,20 @@ SCRIPT
 	[[ "${lines[1]}" =~ ^Successfully\ processed\ 1\ files\ \(${expectedFileSize}B\)\.$ ]]
 	[ "$status" -eq 0 ]
 }
+@test "backcheck: Non-bwrap fallback" {
+	echo 2323 > "$sourceDir"/a-file
+	echo aa > "$sourceDir"/b-file
+	rsync -a "$sourceDir"/ "$backupDir"
+
+	run bwrap \
+		--bind / / \
+		--dev /dev \
+		--bind /tmp /tmp \
+		--setenv PATH "/usr/local/bin:$PATH" \
+		--tmpfs "/usr/local/bin" \
+		--ro-bind /usr/bin/false "/usr/local/bin/bwrap" \
+	"$BATS_TEST_DIRNAME"/backcheck "$backupDir" "$sourceDir"
+
+	[ "$status" -eq 0 ]
+	[ "${lines[0]}" == ".." ]
+}

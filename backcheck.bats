@@ -558,7 +558,7 @@ SCRIPT
 		--bind /usr/bin/rm /usr/local/bin/mkfifo \
 	"$BATS_TEST_DIRNAME"/backcheck "$backupDir" "$sourceDir"
 
-	[[ "$output" =~ ^Could\ not\ create\ named\ pipes\ /tmp/backcheck-[0-9]+-backup-sum\ /tmp/backcheck-[0-9]+-source-sum,\ aborting.$ ]]
+	[[ "$output" =~ ^Could\ not\ create\ named\ pipe\ /tmp/backcheck-[0-9]+-backup-sum,\ aborting.$ ]]
 	[ "$status" -eq 1 ]
 }
 @test "backcheck: Relative backup path" {

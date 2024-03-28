@@ -172,8 +172,8 @@ processed=0
 startTime="$(date +"%s")"
 endTime=$((startTime + timeout))
 
-if ! mkfifo --mode=600 /tmp/backcheck-$$-backup-sum /tmp/backcheck-$$-source-sum 2>/dev/null; then
-	echo "Could not create named pipes /tmp/backcheck-$$-backup-sum /tmp/backcheck-$$-source-sum, aborting."
+if ! mkfifo --mode=600 /tmp/backcheck-$$-backup-sum 2>/dev/null; then
+	echo "Could not create named pipe /tmp/backcheck-$$-backup-sum, aborting."
 
 	exit 1
 fi
@@ -201,10 +201,9 @@ for i in $(shuf -i 0-$((backupFilesCount - 1))); do
 	# (before we're trying to read from the named pipes).
 	# shellcheck disable=2005
 	echo "$(md5sum "$backupFile" 2>&1)" > /tmp/backcheck-$$-backup-sum &
-	# shellcheck disable=2005
-	echo "$(md5sum "$sourceFile" 2>&1)" > /tmp/backcheck-$$-source-sum &
+	sourceFileSum="$(md5sum "$sourceFile" 2>&1)"
 	backupFileSum="$(</tmp/backcheck-$$-backup-sum)"
-	sourceFileSum="$(</tmp/backcheck-$$-source-sum)"
+
 	sizeChecked=$((sizeChecked + fileSize))
 	if [[ "$backupFileSum" =~ ^\\?([0-9a-f]{32}) ]]; then
 		backupFileSum="${BASH_REMATCH[1]}"

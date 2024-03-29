@@ -61,7 +61,7 @@ function statMatch {
 		fi
 		return 1
 	fi
-	if [ ! "${BASH_REMATCH[2]}" == "${BASH_REMATCH[4]}" ]; then
+	if [ $sizeOnly -eq 0 ] && [ ! "${BASH_REMATCH[2]}" == "${BASH_REMATCH[4]}" ]; then
 		if [ "$verbose" -gt 0 ]; then
 			echo -e "\nFile modification time mismatch: '$1' <> '$2'."
 		fi
@@ -72,14 +72,15 @@ function statMatch {
 }
 
 function usage {
-	echo "Backcheck 1.4.0"
-	echo "Usage: backcheck [--timeout s] [--verbose|--debug] backup-path source-path"
+	echo "Backcheck 1.5.0"
+	echo "Usage: backcheck [--timeout s] [--size-only] [--verbose|--debug] backup-path source-path"
 	echo
 	echo "Check that the files in backup-path are readable and identical to the ones in source-path."
 	echo "This can be used to partially (with --timeout, checking a random selection of files) or "
 	echo "to fully test a backup (done by rsync -a or something similar)."
 	echo
 	echo -e "\t--timeout\t\tAbort after checking files for at least this many seconds."
+	echo -e "\t--size-only\t\tOnly skip files that mismatch in size (ignoring differing mtimes)."
 	echo -e "\t--verbose\t\tMore verbose output (shows details when a file is skipped)."
 	echo -e "\t--debug\t\t\tVery verbose output (shows details about all files processed)."
 }
@@ -128,6 +129,7 @@ fi
 timeout=-1
 debug=0
 verbose=0
+sizeOnly=0
 
 while [ $# -gt 2 ]; do
 	case "$1" in
@@ -147,6 +149,10 @@ while [ $# -gt 2 ]; do
 		--debug)
 			debug=1
 			verbose=1
+			shift
+		;;
+		--size-only)
+			sizeOnly=1
 			shift
 		;;
 		*)

@@ -604,3 +604,25 @@ SCRIPT
 	[ "$status" -eq 0 ]
 	[ "${lines[0]}" == ".." ]
 }
+@test "backcheck: Size only" {
+	echo 2323 > "$sourceDir"/a-file
+	echo aa > "$sourceDir"/b-file
+	rsync -a "$sourceDir"/ "$backupDir"
+	touch -d'2005-01-01 1:1:1' "$sourceDir"/b-file
+
+	run "$BATS_TEST_DIRNAME"/backcheck --size-only "$backupDir" "$sourceDir"
+	[ "$status" -eq 0 ]
+	[ "${lines[0]}" == ".." ]
+}
+@test "backcheck: Size only mismatch" {
+	echo 2323 > "$sourceDir"/a-file
+	echo aa > "$sourceDir"/b-file
+	rsync -a "$sourceDir"/ "$backupDir"
+	echo bb > "$sourceDir"/b-file
+
+	touch -d'2005-01-01 1:1:1' "$sourceDir"/b-file
+
+	run "$BATS_TEST_DIRNAME"/backcheck --size-only "$backupDir" "$sourceDir"
+	[ "$status" -eq 255 ]
+	echo "$output" | grep -F "Checksum mismatch '$backupDir/b-file' (d404401c8c6495b206fc35c95e55a6d5) <> '$sourceDir/b-file' (bfcc9da4f2e1d313c63cd0a4ee7604e9), aborting."
+}

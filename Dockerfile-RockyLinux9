@@ -1,0 +1,5 @@
+FROM docker.io/rockylinux/rockylinux:9
+
+RUN dnf -y install "https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm"
+RUN dnf --nodocs --setopt=install_weak_deps=False -y install rsync bubblewrap sudo bats findutils
+RUN dnf clean all -y

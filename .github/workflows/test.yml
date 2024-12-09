@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Run test with CentOS 7
-        run: bash bats-CentOS7.sh backcheck.bats
       - name: Run test with Rocky Linux 8
         run: bash bats-RockyLinux8.sh backcheck.bats
+      - name: Run test with Rocky Linux 9
+        run: bash bats-RockyLinux9.sh backcheck.bats

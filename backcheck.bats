@@ -117,7 +117,17 @@ function testAtime {
 @test "backcheck: Invalid timeout" {
 	run "$BATS_TEST_DIRNAME"/backcheck --timeout 1a /var/tmp /var/tmp
 
-	[[ "$output" = 'Invalid argument: Timeout must be an integer.' ]]
+	[[ "$output" = 'Invalid argument: Timeout must be a positive integer.' ]]
+	[ "$status" -eq 1 ]
+
+	run "$BATS_TEST_DIRNAME"/backcheck --timeout 0 /var/tmp /var/tmp
+
+	[[ "$output" = 'Invalid argument: Timeout must be a positive integer.' ]]
+	[ "$status" -eq 1 ]
+
+	run "$BATS_TEST_DIRNAME"/backcheck --timeout -1 /var/tmp /var/tmp
+
+	[[ "$output" = 'Invalid argument: Timeout must be a positive integer.' ]]
 	[ "$status" -eq 1 ]
 }
 @test "backcheck: Invalid argument" {

@@ -134,8 +134,8 @@ sizeOnly=0
 while [ $# -gt 2 ]; do
 	case "$1" in
 		--timeout)
-			if ! (($2 + 0)) 2>/dev/null; then
-				echo 'Invalid argument: Timeout must be an integer.'
+			if ! (($2 > 0)) 2>/dev/null; then
+				echo 'Invalid argument: Timeout must be a positive integer.'
 
 				exit 1
 			fi
